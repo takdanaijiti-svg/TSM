@@ -9,8 +9,8 @@ interface AppContextType {
   reservations: Reservation[];
   staffDirectory: StaffMember[];
   settings: SystemSettings;
-  login: (email: string) => boolean;
-  register: (name: string, email: string, role: Role, department: string) => boolean;
+  login: (email: string, password?: string) => boolean;
+  register: (name: string, email: string, password: string, role: Role, department: string) => boolean;
   logout: () => void;
   // Equipment Management
   addEquipment: (item: Omit<Equipment, 'id'>) => void;
@@ -52,9 +52,9 @@ const MOCK_IMAGES = {
 };
 
 const DEFAULT_USERS: User[] = [
-  { id: 'u1', name: 'ผศ.นพ.นัฐวุฒิ รักเรียน (ศัลยศาสตร์)', email: 'admin@hospital.com', role: 'Admin', department: 'ฝ่ายศัลยกรรม (Surgery)' },
-  { id: 'u2', name: 'ดร.อรอนงค์ เลิศภักดิ์ (อายุรกรรม)', email: 'manager@hospital.com', role: 'Manager', department: 'ฝ่ายอายุรกรรม (Medicine)' },
-  { id: 'u3', name: 'นางสาวพิไลวรรณ พลอยดี (โสตทัศนศึกษา)', email: 'staff@hospital.com', role: 'Staff', department: 'ฝ่ายกุมารเวชศาสตร์ (Pediatric)' },
+  { id: 'u1', name: 'ผศ.นพ.นัฐวุฒิ รักเรียน (ศัลยศาสตร์)', email: 'admin@hospital.com', role: 'Admin', department: 'ฝ่ายศัลยกรรม (Surgery)', password: 'admin123' },
+  { id: 'u2', name: 'ดร.อรอนงค์ เลิศภักดิ์ (อายุรกรรม)', email: 'manager@hospital.com', role: 'Manager', department: 'ฝ่ายอายุรกรรม (Medicine)', password: 'manager123' },
+  { id: 'u3', name: 'นางสาวพิไลวรรณ พลอยดี (โสตทัศนศึกษา)', email: 'staff@hospital.com', role: 'Staff', department: 'ฝ่ายกุมารเวชศาสตร์ (Pediatric)', password: 'staff123' },
 ];
 
 const DEFAULT_EQUIPMENT: Equipment[] = [
@@ -568,20 +568,41 @@ const DEFAULT_RESERVATIONS: Reservation[] = [
 ];
 
 const DEFAULT_SETTINGS: SystemSettings = {
-  hospitalName: 'โรงพยาบาลมหาวิทยาลัยแพทยศาสตร์โสตทัศน์',
-  logoUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230f766e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>'
+  hospitalName: 'โรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช',
+  logoUrl: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><circle cx="50" cy="50" r="47" fill="#005a3c" stroke="#ffffff" stroke-width="1" /><circle cx="50" cy="50" r="45" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.5" /><circle cx="50" cy="50" r="33.5" fill="none" stroke="#ffffff" stroke-width="1.2" /><path id="topTextPath" d="M 9.5 50 A 40.5 40.5 0 0 1 90.5 50" fill="none" /><path id="bottomTextPath" d="M 90.5 50 A 40.5 40.5 0 0 1 9.5 50" fill="none" /><text font-family="'Sarabun', 'Inter', sans-serif" font-size="4.2" font-weight="950" fill="#ffffff" letter-spacing="0.08"><textPath href="#topTextPath" startOffset="50%" text-anchor="middle">โรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช</textPath></text><text font-family="'Sarabun', 'Inter', sans-serif" font-size="5" font-weight="950" fill="#ffffff" letter-spacing="0.1"><textPath href="#bottomTextPath" startOffset="50%" text-anchor="middle">กระทรวงสาธารณสุข</textPath></text><g transform="translate(50, 50) scale(0.55)"><line x1="0" y1="-28" x2="0" y2="24" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" /><circle cx="0" cy="-28" r="3" fill="#ffffff" /><path d="M -5 -33 C -7 -38 0 -45 0 -45 C 0 -45 7 -38 5 -33 C 8 -30 3 -26 0 -26 C -3 -26 -8 -30 -5 -33 Z" fill="#ffffff" /><path d="M -2 -31 C -4 -34 0 -38 0 -38 C 0 -38 4 -34 2 -31 C 3 -29 1 -27 0 -27 C -1 -27 -3 -29 -2 -31 Z" fill="#e6f4ea" opacity="0.9" /><path d="M 0 -13 C 8 -23 25 -18 25 -9 C 25 -2 15 -4 10 -2 C 6 0 2 3 0 5" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" /><path d="M 0 -13 C -8 -23 -25 -18 -25 -9 C -25 -2 -15 -4 -10 -2 C -6 0 -2 3 0 5" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" /><path d="M 0 -7 C 5 -15 20 -11 20 -4 C 20 2 12 0 7 2" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" /><path d="M 0 -7 C -5 -15 -20 -11 -20 -4 C -20 2 -12 0 -7 2" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" /><path d="M 0 10 C 13 8 13 -6 0 -8 C -13 -6 -13 8 0 10" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" /><path d="M 0 22 C 10 20 10 12 0 10 C -10 12 -10 20 0 22" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" /><path d="M -1 -7 C -5 -9 -8 -9 -11 -8 C -10 -7 -8 -5 -5 -6 Z" fill="#ffffff" /><path d="M 1 -7 C 5 -9 8 -9 11 -8 C 10 -7 8 -5 5 -6 Z" fill="#ffffff" /></g></svg>`
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Global States initialization
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('av_current_user');
-    return saved ? JSON.parse(saved) : DEFAULT_USERS[0]; // Default to first user (Admin) to facilitate instant inspection
-  });
-
   const [users, setUsers] = useState<User[]>(() => {
     const saved = localStorage.getItem('av_users');
-    return saved ? JSON.parse(saved) : DEFAULT_USERS;
+    const loaded: User[] = saved ? JSON.parse(saved) : DEFAULT_USERS;
+    return loaded.map(u => {
+      if (!u.password) {
+        let password = 'password123';
+        if (u.email.toLowerCase().includes('admin')) password = 'admin123';
+        else if (u.email.toLowerCase().includes('manager')) password = 'manager123';
+        else if (u.email.toLowerCase().includes('staff')) password = 'staff123';
+        return { ...u, password };
+      }
+      return u;
+    });
+  });
+
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('av_current_user');
+    if (saved) {
+      try {
+        const u = JSON.parse(saved);
+        if (u && !u.password) {
+          u.password = u.email.toLowerCase().includes('admin') ? 'admin123' : u.email.toLowerCase().includes('manager') ? 'manager123' : 'staff123';
+        }
+        return u;
+      } catch (e) {
+        return { ...DEFAULT_USERS[0], password: 'admin123' };
+      }
+    }
+    return { ...DEFAULT_USERS[0], password: 'admin123' }; // Default to first user (Admin) to facilitate instant inspection
   });
 
   const [equipmentList, setEquipmentList] = useState<Equipment[]>(() => {
@@ -617,7 +638,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [settings, setSettings] = useState<SystemSettings>(() => {
     const saved = localStorage.getItem('av_settings');
-    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.hospitalName === 'โรงพยาบาลมหาวิทยาลัยแพทยศาสตร์โสตทัศน์') {
+          return DEFAULT_SETTINGS;
+        }
+        return parsed;
+      } catch (e) {
+        return DEFAULT_SETTINGS;
+      }
+    }
+    return DEFAULT_SETTINGS;
   });
 
   // Persists states in LocalStorage upon change
@@ -650,26 +682,61 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [settings]);
 
   // Actions handler
-  const login = (email: string): boolean => {
+  const login = (email: string, password?: string): boolean => {
     const cleanEmail = email.trim().toLowerCase();
     const foundUser = users.find(u => u.email.toLowerCase() === cleanEmail);
     if (foundUser) {
-      setCurrentUser(foundUser);
-      return true;
+      if (password && foundUser.password === password) {
+        setCurrentUser(foundUser);
+        return true;
+      }
+      // Allow internal quick switcher to change roles without password re-entry
+      if (password === undefined && currentUser !== null) {
+        setCurrentUser(foundUser);
+        return true;
+      }
+      return false;
     }
     // Attempt automatic fallback mock provision for testing
+    let assumedRole: Role | null = null;
+    let fallbackPassword = 'password123';
     if (cleanEmail.includes('admin')) {
-      const u: User = { id: 'u' + Date.now(), name: 'Admin User', email: email, role: 'Admin', department: 'ฝ่ายผู้อำนวยการโสตศึกษา' };
-      setUsers(prev => [...prev, u]);
-      setCurrentUser(u);
-      return true;
+      assumedRole = 'Admin';
+      fallbackPassword = 'admin123';
     } else if (cleanEmail.includes('manager')) {
-      const u: User = { id: 'u' + Date.now(), name: 'Manager User', email: email, role: 'Manager', department: 'ฝ่ายเทคโนโลยีพยาบาล' };
-      setUsers(prev => [...prev, u]);
-      setCurrentUser(u);
-      return true;
+      assumedRole = 'Manager';
+      fallbackPassword = 'manager123';
     } else if (cleanEmail.includes('staff')) {
-      const u: User = { id: 'u' + Date.now(), name: 'Staff User', email: email, role: 'Staff', department: 'ฝ่ายวิจัยและกุมารเวช' };
+      assumedRole = 'Staff';
+      fallbackPassword = 'staff123';
+    }
+
+    if (assumedRole) {
+      if (password && password !== fallbackPassword) {
+        return false;
+      }
+      // Allow rapid internal quick switcher
+      if (password === undefined && currentUser !== null) {
+        const u: User = { 
+          id: 'u' + Date.now(), 
+          name: `${assumedRole} User`, 
+          email: email, 
+          role: assumedRole, 
+          department: assumedRole === 'Admin' ? 'ฝ่ายผู้อำนวยการโสตศึกษา' : assumedRole === 'Manager' ? 'ฝ่ายเทคโนโลยีพยาบาล' : 'ฝ่ายวิจัยและกุมารเวช',
+          password: fallbackPassword
+        };
+        setUsers(prev => [...prev, u]);
+        setCurrentUser(u);
+        return true;
+      }
+      const u: User = { 
+        id: 'u' + Date.now(), 
+        name: `${assumedRole} User`, 
+        email: email, 
+        role: assumedRole, 
+        department: assumedRole === 'Admin' ? 'ฝ่ายผู้อำนวยการโสตศึกษา' : assumedRole === 'Manager' ? 'ฝ่ายเทคโนโลยีพยาบาล' : 'ฝ่ายวิจัยและกุมารเวช',
+        password: fallbackPassword
+      };
       setUsers(prev => [...prev, u]);
       setCurrentUser(u);
       return true;
@@ -677,7 +744,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return false;
   };
 
-  const register = (name: string, email: string, role: Role, department: string): boolean => {
+  const register = (name: string, email: string, password: string, role: Role, department: string): boolean => {
     const trimmedEmail = email.trim().toLowerCase();
     if (users.some(u => u.email.toLowerCase() === trimmedEmail)) {
       return false; // Already exists
@@ -687,7 +754,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name,
       email: trimmedEmail,
       role,
-      department
+      department,
+      password
     };
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);

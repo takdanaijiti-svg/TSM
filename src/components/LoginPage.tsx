@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Role } from '../types';
-import { KeyRound, ShieldAlert, Sparkles, Building2, UserPlus, LogIn, Mail, ArrowRight } from 'lucide-react';
+import { KeyRound, ShieldAlert, Sparkles, Building2, UserPlus, LogIn, Mail, ArrowRight, Lock, Eye, EyeOff } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login, register, settings } = useApp();
@@ -10,13 +10,16 @@ export const LoginPage: React.FC = () => {
   const [name, setName] = useState('');
   const [role, setRole] = useState<Role>('Staff');
   const [department, setDepartment] = useState('ฝ่ายกุมารเวชศาสตร์ (Pediatric)');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
-  // Quick access identities as mandated
+  // Quick access identities as mandated with default pre-configured passwords
   const quickLogins = [
-    { email: 'admin@hospital.com', label: 'Admin (ผู้ดูแลระบบสูงสุด)', color: 'bg-rose-500 hover:bg-rose-600', desc: 'จัดการอุปกรณ์, อนุมัติยืม-คืน, จัดทำเนียบพนักงาน, เข้าถึง analytics และตั้งค่าระบบ' },
-    { email: 'manager@hospital.com', label: 'Manager (หัวหน้างานโสตฯ)', color: 'bg-amber-500 hover:bg-amber-600', desc: 'ตรวจสอบและอนุมัติใบยืม, เช็คปฏิทิน และสืบค้นทำเนียบบุคลากร' },
-    { email: 'staff@hospital.com', label: 'Staff (แพทย์ผู้ยืมยุทโธปกรณ์)', color: 'bg-emerald-500 hover:bg-emerald-600', desc: 'เลือกหยิบอุปกรณ์ใส่ตะกร้า, จัดทำใบจอง และดูสถานะประวัติการส่งคำขอ' }
+    { email: 'admin@hospital.com', password: 'admin123', label: 'Admin (ผู้ดูแลระบบสูงสุด)', color: 'bg-rose-500 hover:bg-rose-600', desc: 'รหัสผ่าน: admin123 | จัดการอุปกรณ์, อนุมัติยืม-คืน, จัดทำเนียบพนักงาน, เข้าถึง analytics และตั้งค่าระบบ' },
+    { email: 'manager@hospital.com', password: 'manager123', label: 'Manager (หัวหน้างานโสตฯ)', color: 'bg-amber-500 hover:bg-amber-600', desc: 'รหัสผ่าน: manager123 | ตรวจสอบและอนุมัติใบยืม, เช็คปฏิทิน และสืบค้นทำเนียบบุคลากร' },
+    { email: 'staff@hospital.com', password: 'staff123', label: 'Staff (แพทย์ผู้ยืมยุทโธปกรณ์)', color: 'bg-emerald-500 hover:bg-emerald-600', desc: 'รหัสผ่าน: staff123 | เลือกหยิบอุปกรณ์ใส่ตะกร้า, จัดทำใบจอง และดูสถานะประวัติการส่งคำขอ' }
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -24,30 +27,39 @@ export const LoginPage: React.FC = () => {
     setError('');
 
     if (isRegister) {
-      if (!name.trim() || !email.trim() || !department.trim()) {
+      if (!name.trim() || !email.trim() || !department.trim() || !password) {
         setError('กรุณากรอกข้อมูลให้ครบถ้วนทุกช่อง');
         return;
       }
-      const success = register(name, email, role, department);
+      if (password.length < 6) {
+        setError('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษรเพื่อความปลอดภัย');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError('รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน');
+        return;
+      }
+      const success = register(name, email, password, role, department);
       if (!success) {
         setError('อีเมลนี้ถูกบันทึกในระบบแล้ว');
       }
     } else {
-      if (!email.trim()) {
-        setError('กรุณากรอกอีเมลผู้ใช้งาน');
+      if (!email.trim() || !password) {
+        setError('กรุณากรอกอีเมลและรหัสผ่านผู้ใช้งาน');
         return;
       }
-      const success = login(email);
+      const success = login(email, password);
       if (!success) {
-        setError('ไม่พบบัญชีผู้ใช้งานที่ผูกกับอีเมลนี้ (กรุณาใช้อีเมลด่วนที่ด้านล่าง หรือสลับโหมดเป็นสมัครสมาชิก)');
+        setError('อีเมลหรือรหัสผ่านไม่ถูกต้อง (กรุณากรอกรหัสผ่านให้ถูกต้อง หรือกดปุ่มบัญชีทดลองด่วนด้านล่างเพื่อเข้าสู่ระบบทันที)');
       }
     }
   };
 
-  const handleQuickLogin = (quickEmail: string) => {
+  const handleQuickLogin = (quickEmail: string, quickPass: string) => {
     setError('');
     setEmail(quickEmail);
-    login(quickEmail);
+    setPassword(quickPass);
+    login(quickEmail, quickPass);
   };
 
   return (
@@ -175,6 +187,58 @@ export const LoginPage: React.FC = () => {
               </div>
             </div>
 
+            <div>
+              <label htmlFor="password" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex justify-between">
+                <span>รหัสผ่าน (Password)</span>
+                {isRegister && <span className="text-emerald-400 font-normal lowercase tracking-normal">(อย่างน้อย 6 ตัวอักษร)</span>}
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <Lock size={16} />
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-950 text-white border border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-slate-600 font-medium font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {isRegister && (
+              <div>
+                <label htmlFor="confirmPassword" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  ยืนยันรหัสผ่าน (Confirm Password)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                    <Lock size={16} />
+                  </div>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-10 pr-3 py-2.5 bg-slate-950 text-white border border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-slate-600 font-medium font-mono"
+                  />
+                </div>
+              </div>
+            )}
+
             <button
               type="submit"
               className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-teal-900/30 transition-all cursor-pointer mt-4"
@@ -192,6 +256,8 @@ export const LoginPage: React.FC = () => {
               onClick={() => {
                 setIsRegister(!isRegister);
                 setError('');
+                setPassword('');
+                setConfirmPassword('');
               }}
               className="text-emerald-400 hover:text-emerald-300 font-bold underline transition-colors cursor-pointer"
             >
@@ -213,7 +279,7 @@ export const LoginPage: React.FC = () => {
                 <button
                   key={ql.email}
                   type="button"
-                  onClick={() => handleQuickLogin(ql.email)}
+                  onClick={() => handleQuickLogin(ql.email, ql.password)}
                   className="w-full text-left p-3.5 rounded-xl bg-slate-950/80 hover:bg-slate-950 hover:border-slate-700 transition-all border border-slate-800 flex items-start gap-3 cursor-pointer group"
                 >
                   <span className={`w-2.5 h-2.5 rounded-full mt-1.5 group-hover:scale-130 transition-transform ${ql.email.includes('admin') ? 'bg-rose-500' : ql.email.includes('manager') ? 'bg-amber-500' : 'bg-emerald-500'}`} />

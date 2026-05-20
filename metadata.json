@@ -1,6 +1,6 @@
 {
-  "name": "AV Loan System (โสตทัศนศึกษา)",
-  "description": "ระบบยืม-คืนอุปกรณ์โสตทัศนูปกรณ์สำหรับโรงพยาบาล (Hospital Audiovisual Loan System) with role-based access control, real-time inventory adjustments, interactive calendar tooltips, and repair workflow tracking.",
+  "name": "ระบบยืม-คืนโสตฯ รพ.สมเด็จพระเจ้าตากสินมหาราช",
+  "description": "ระบบยืม-คืนอุปกรณ์โสตทัศนูปกรณ์สำหรับโรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช (Hospital Audiovisual Loan System) พร้อมระบบตรวจสอบคิวการจอง และระบบอนุมัติแยกบทบาทการใช้งาน",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
