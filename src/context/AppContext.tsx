@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Equipment, CartItem, Reservation, StaffMember, SystemSettings, Role } from '../types';
+import { User, Equipment, CartItem, Reservation, StaffMember, SystemSettings, Role, ReservationStatus } from '../types';
 
 interface AppContextType {
   currentUser: User | null;
@@ -58,65 +58,408 @@ const DEFAULT_USERS: User[] = [
 ];
 
 const DEFAULT_EQUIPMENT: Equipment[] = [
+  // Category 1: AV Equipment & Hardware (Loanable / ยืม-คืน)
   {
     id: 'eq1',
-    name: 'Surgical Video Camera System (กล้องผ่าตัดเคลื่อนที่ความละเอียดสูง)',
-    category: 'กล้องและบันทึกภาพ',
-    description: 'ชุดกล้องสำหรับบันทึกวิดีโอผ่าตัด เลนส์ขยายพิเศษเพื่อการเรียนการสอน มีระบบเก็บข้อมูลผ่าน SD Card และต่อสายสัญญาณ HDMI ขึ้นหน้าจอมอนิเตอร์ใหญ่',
-    totalUnits: 3,
-    availableUnits: 3,
-    status: 'Ready',
-    image: MOCK_IMAGES.camera
-  },
-  {
-    id: 'eq2',
-    name: 'Medical Grand Round Projector (เครื่องฉายเลเซอร์โปรเจคเตอร์ 4K)',
-    category: 'เครื่องฉายและจอภาพ',
-    description: 'เครื่องฉายความสว่างสูง 6,000 Lumens สำหรับห้องคอนเฟอเรนซ์และหอประชุมใหญ่ แสดงผลสไลด์เคสผู้ป่วยและรูปสีเอ็กซ์เรย์ได้คมชัดสูง',
+    name: 'Projector (เครื่องฉายโปรเจคเตอร์)',
+    category: 'Hardware',
+    description: 'เครื่องฉายประสิทธิภาพสูง เหมาะสำหรับการบรรยายทางวิชาการและประชุมแพทย์',
     totalUnits: 5,
     availableUnits: 5,
     status: 'Ready',
     image: MOCK_IMAGES.projector
   },
   {
+    id: 'eq2',
+    name: 'Notebook (โน้ตบุ๊ก)',
+    category: 'Hardware',
+    description: 'โน้ตบุ๊กประสิทธิภาพสูง สำหรับงานนำเสนอและงานสอนทั่วไปของแพทย์ธิการ',
+    totalUnits: 10,
+    availableUnits: 10,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%231e40af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="2" y1="20" x2="22" y2="20"></line><line x1="12" y1="17" x2="12" y2="20"></line></svg>'
+  },
+  {
     id: 'eq3',
-    name: 'Wireless UHF Microphone & Audio Set (ชุดไมโครโฟนไร้สายระดับพรีเมียม)',
-    category: 'ระบบเสียง',
-    description: 'ตู้ลำโพงพกพาพร้อมไมค์ไร้สายคู่ สำหรับการบรรยายความรู้ทางวิชาการและการนำเสนอเคสในวอร์ดผู้ป่วย',
+    name: 'PC All in One (คอมพิวเตอร์ตั้งโต๊ะ All in One)',
+    category: 'Hardware',
+    description: 'คอมพิวเตอร์ตั้งโต๊ะ All in One จอใหญ่สะดวกใช้งาน ทำงานประมวลการสอนรวดเร็ว',
     totalUnits: 4,
     availableUnits: 4,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%2316a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="12" rx="2"></rect><path d="M12 15v5M9 20h6"></path></svg>'
+  },
+  {
+    id: 'eq4',
+    name: 'Speaker System (ชุดลำโพงเคลื่อนย้าย)',
+    category: 'Audio',
+    description: 'ลำโพงอเนกประสงค์ มีล้อลากและแบตเตอรี่ในตัวสำหรับการบรรยายพยุงชีพ',
+    totalUnits: 6,
+    availableUnits: 6,
     status: 'Ready',
     image: MOCK_IMAGES.audio
   },
   {
-    id: 'eq4',
-    name: '3D Anatomy VR Simulator Headset (แว่นจำลองกายวิภาคศาสตร์ 3 มิติ)',
-    category: 'ศูนย์ฝึกแพทย์จำลอง',
-    description: 'แว่นจำลองภาพเสมือนจริงระบบ Virtual Reality สำหรับศึกษาโครงสร้างหัวใจและระบบประสาทของแพทย์ฝึกหัด มีโปรแกรมสอนล่วงหน้าติดตั้งพร้อมใช้',
-    totalUnits: 2,
-    availableUnits: 1, // Let's make 1 units ready, 1 in repair to exhibit workflow initial state
-    status: 'Ready',
-    image: MOCK_IMAGES.vr
-  },
-  {
     id: 'eq5',
-    name: 'Telemedicine Dual-Screen Mobile Cart (รถเข็นตรวจผู้ป่วยทางไกลจอคู่)',
-    category: 'เครื่องฉายและจอภาพ',
-    description: 'รถเข็นติดตั้งหน้าจอความละเอียดสูง 2 ตัว พร้อมกล้องแพนซูมระยะไกลและชุดต่อพ่วงอุปกรณ์ส่องหู/คอ สำหรับประชุมทางไกลข้ามโรงพยาบาลภูมิภาค',
+    name: 'Television (TV)',
+    category: 'Hardware',
+    description: 'จอโทรทัศน์แบนราบ สำหรับต่อพ่วงแสดงรายละเอียดสไลด์การประชุมพยาธิวิทยา',
     totalUnits: 3,
     availableUnits: 3,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%232563eb" stroke-width="2"><rect x="2" y="3" width="20" height="13" rx="2"></rect><line x1="12" y1="16" x2="12" y2="21"></line><line x1="8" y1="21" x2="16" y2="21"></line></svg>'
+  },
+  {
+    id: 'eq6',
+    name: 'Power Strip (ปลั๊กไฟต่อพ่วง)',
+    category: 'Accessories',
+    description: 'ปลั๊กพ่วงสายยาว ปลอดภัย ได้มาตรฐานความหน่วงไฟฟ้ากระทรวงสาธารณสุข',
+    totalUnits: 15,
+    availableUnits: 15,
+    status: 'Ready',
+    image: MOCK_IMAGES.pointer
+  },
+  {
+    id: 'eq7',
+    name: 'Utility Cart (รถเข็นย้ายอุปกรณ์)',
+    category: 'Accessories',
+    description: 'รถเข็นเหล็กพกพาสะดวก สำหรับขนย้ายสื่ออุปกรณ์โสตฯ ตามตึกวอร์ดผู้ป่วยเพื่อจัดงานสอน',
+    totalUnits: 2,
+    availableUnits: 2,
     status: 'Ready',
     image: MOCK_IMAGES.cart
   },
   {
-    id: 'eq6',
-    name: 'Smart Laser Presenter & Pointer (รีโมทพรีเซนต์ความถี่วิทยุไร้สาย)',
-    category: 'อุปกรณ์เสริม',
-    description: 'รีโมทควบคุมสไลด์ระยะไกลพร้อมไฟชี้พอยเตอร์สีเขียวสะท้อนแสง สำหรับงานสัมมนาวิชาการทางการแพทย์',
+    id: 'eq8',
+    name: 'Visualizer (เครื่องฉายภาพ 3 มิติ)',
+    category: 'Hardware',
+    description: 'เครื่องฉายจับมุมด้านบนจับฉายฟิล์มเอกสารและชิ้นตัวอย่างการแพทย์จำลอง',
+    totalUnits: 2,
+    availableUnits: 2,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%234338ca" stroke-width="2"><path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"></path><path d="M12 4V2M12 22v-2M4 12H2M22 12h-2"></path></svg>'
+  },
+  {
+    id: 'eq9',
+    name: 'Wireless Microphone (ไมค์ลอย)',
+    category: 'Audio',
+    description: 'ไมโครโฟนไร้สายส่งพลังงานคลื่นวิทยุความถี่สูง UHF สัญญาณแน่นต้านสัญญาณรบกวนแพทย์',
     totalUnits: 8,
     availableUnits: 8,
     status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23db2777" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"></path></svg>'
+  },
+  {
+    id: 'eq10',
+    name: 'Conference Microphone (ไมค์ประชุม Conference)',
+    category: 'Audio',
+    description: 'ไมโครโฟนก้านยาวสไตล์คอห่าน พร้อมปุ่มสลับเสียงของประธานเปิดการจัดประชุมวิชาการ',
+    totalUnits: 4,
+    availableUnits: 4,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%237c3aed" stroke-width="2"><path d="M17 12a5 5 0 0 1-10 0"></path><path d="M12 17v4"></path><path d="M9 21h6"></path><path d="M12 1a3 3 5 0 0 1-3 3v7a3 3 0 0 1 6 0V4a3 3 0 0 1-3-3Z"></path></svg>'
+  },
+  {
+    id: 'eq11',
+    name: 'HDMI Cable (สายสัญญาณ HDMI)',
+    category: 'Cables',
+    description: 'สายต่อภาพความละเอียดความเร็วสูง HDMI 5m - 10m สำหรับเชื่อมต่อพอร์ตรวมหน้าสไลด์',
+    totalUnits: 20,
+    availableUnits: 20,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230f766e" stroke-width="2"><path d="M12 2v20M17 5H7M17 19H7"></path></svg>'
+  },
+  {
+    id: 'eq12',
+    name: 'Audio Cable (สายสัญญาณเสียง)',
+    category: 'Cables',
+    description: 'สายพ่วง AUX / XLR สำหรับต่อเชื่อมเสียงจากคอมพิวเตอร์เข้าแอมป์ใหญ่หอประชุม',
+    totalUnits: 15,
+    availableUnits: 15,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230f766e" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path></svg>'
+  },
+  {
+    id: 'eq13',
+    name: 'iPad Adapter (Adapter iPad)',
+    category: 'Accessories',
+    description: 'ตัวแปลงสัญญาณ Lightning / USB-C เป็น HDMI สำหรับแพทย์สายไอแพดฉายสไลด์เคส',
+    totalUnits: 5,
+    availableUnits: 5,
+    status: 'Ready',
     image: MOCK_IMAGES.pointer
+  },
+  {
+    id: 'eq14',
+    name: 'HDMI Adapter (Adapter HDMI)',
+    category: 'Accessories',
+    description: 'ฮับต่อเชื่อมพอร์ตแปลงพ่วงสัญญาณ HDMI นานาสายต่อ',
+    totalUnits: 10,
+    availableUnits: 10,
+    status: 'Ready',
+    image: MOCK_IMAGES.pointer
+  },
+  {
+    id: 'eq15',
+    name: 'Macbook Adapter (Adapter Macbook)',
+    category: 'Accessories',
+    description: 'ตัวเชื่อมต่อแปรผันพอร์ตสำหรับแมคบุ๊กโดยเฉพาะ เพื่อแก้ปัญหาสายข้ามแบรนด์',
+    totalUnits: 5,
+    availableUnits: 5,
+    status: 'Ready',
+    image: MOCK_IMAGES.pointer
+  },
+  {
+    id: 'eq16',
+    name: 'Portable Projector Screen (จอรับโปรเจคเตอร์เคลื่อนที่)',
+    category: 'Hardware',
+    description: 'จอรับภาพพื้นขาวขาตั้งดึงก้าน แอร์เคลื่อนย้ายเร็วสำหรับจัดสอนวอร์ดด่วน',
+    totalUnits: 4,
+    availableUnits: 4,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%231e40af" stroke-width="2"><rect x="3" y="3" width="18" height="11" rx="2"></rect><path d="M12 14v5M7 19h10"></path></svg>'
+  },
+  {
+    id: 'eq17',
+    name: 'Laminator (เครื่องเคลือบบัตร/เอกสาร)',
+    category: 'Hardware',
+    description: 'เครื่องรีดพลาสติกเคลือบคะแนนบัตร ป้ายสตาฟ หรือรูปภาพพรีเกรดประกอบงานวิจัย',
+    totalUnits: 2,
+    availableUnits: 2,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230284c7" stroke-width="2"><path d="M4 18h16V6H4v12z"></path><path d="M1 9h2M21 9h2M6 22h12"></path></svg>'
+  },
+  {
+    id: 'eq18',
+    name: 'Heavy Duty Stapler (แม็กเย็บ ตัวใหญ่)',
+    category: 'Office Supply',
+    description: 'เครื่องเย็บเอกสารประวัติและเล่มงานพิมพ์ประกาศแพทย์ตัวหนาพิเศษ',
+    totalUnits: 3,
+    availableUnits: 3,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%231e40af" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>'
+  },
+  {
+    id: 'eq19',
+    name: 'Standard Stapler (แม็กเย็บ ตัวเล็ก)',
+    category: 'Office Supply',
+    description: 'สเตปเลอร์เย็บประดาบขนาดทั่วไปสำหรับจัดกระดาษชีทเข้าแถว',
+    totalUnits: 8,
+    availableUnits: 8,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%231e45af" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>'
+  },
+  {
+    id: 'eq20',
+    name: 'Scissors (กรรไกร)',
+    category: 'Office Supply',
+    description: 'กรรไกรคมเหล็กด้ามสีสำหรับการจัดตัดแต่งขอบสติ๊กเกอร์พิจารณาบอร์ด',
+    totalUnits: 10,
+    availableUnits: 10,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23db2777" stroke-width="2"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.8" y1="14.8" x2="20" y2="20"></line></svg>'
+  },
+  {
+    id: 'eq21',
+    name: 'Cutter (คัตเตอร์)',
+    category: 'Office Supply',
+    description: 'มีดคัตเตอร์คมปรับก้านสไลด์อรรถประโยชน์ตัดกรีดแผ่นรองฟิวเจอร์บอร์ด',
+    totalUnits: 10,
+    availableUnits: 10,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23db2777" stroke-width="2"><path d="m14.5 17.5 5 5 3-3-5-5"></path><path d="M13 16V4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12z"></path></svg>'
+  },
+  {
+    id: 'eq22',
+    name: 'Ruler (ไม้บรรทัด)',
+    category: 'Office Supply',
+    description: 'ไม้บรรทัดเหล็กเกรดพรีเมียม สเกลชัดเจน สำหรับจัดสติกเกอร์ตรงเลเวลยึดเกาะ',
+    totalUnits: 15,
+    availableUnits: 15,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%234b5563" stroke-width="2"><rect x="2" y="7" width="20" height="10" rx="1"></rect><line x1="6" y1="7" x2="6" y2="12"></line><line x1="10" y1="7" x2="10" y2="12"></line><line x1="14" y1="7" x2="14" y2="12"></line><line x1="18" y1="7" x2="18" y2="12"></line></svg>'
+  },
+  {
+    id: 'eq23',
+    name: 'Cutting Mat (แผ่นรองตัด)',
+    category: 'Office Supply',
+    description: 'แผ่นยางรองกรีดจัดแนว ป้องกันผิวโต๊ะเป็นรอย มีพาสติกหนืดรับมีดดั่งดี',
+    totalUnits: 5,
+    availableUnits: 5,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%2310b981" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>'
+  },
+  {
+    id: 'eq24',
+    name: 'Microphone Stand (ขาตั้งไมค์)',
+    category: 'Audio',
+    description: 'ขาตั้งเหล็กก้านสไลด์สากลอัพบวกได้หน้าเวที สแตฟจัดให้ได้',
+    totalUnits: 6,
+    availableUnits: 6,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%231e40af" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><path d="M5 19h14M12 5l-4-3 4-1 4 1-4 3Z"></path></svg>'
+  },
+  {
+    id: 'eq25',
+    name: 'Vinyl Stand (ขาตั้งป้ายไวนิล)',
+    category: 'Accessories',
+    description: 'ขาเหล็กพับแบบ X-Stand ขึงป้ายโฆษณาจัดตั้งบอร์ดนิทรรศการวิชาการหน้าตึก',
+    totalUnits: 4,
+    availableUnits: 4,
+    status: 'Ready',
+    image: MOCK_IMAGES.pointer
+  },
+  {
+    id: 'eq26',
+    name: 'Squeegee (ไม้ปาดสติ๊กเกอร์)',
+    category: 'Office Supply',
+    description: 'แผ่นปาดหน้าตัดติดเรียบริมสติ๊กเกอร์ไวนิล ปราศจากฟองอากาศรบกวนตา',
+    totalUnits: 4,
+    availableUnits: 4,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23059669" stroke-width="2"><path d="M4 8h16V4H4v4z"></path><path d="M12 8v12M8 20h8"></path></svg>'
+  },
+
+  // Category 2: Office Supplies & Consumables (Deduct Only / เบิกแล้วหมดไป)
+  {
+    id: 'eq27',
+    name: 'Futureboard (ฟิวเจอร์บอร์ด)',
+    category: 'Consumables',
+    description: 'แผ่นพลาสติกลูกฟูกตกแต่งป้ายสัมมนาหรือจัดนิทรรศการบอร์ดแพทย์ (เบิกแล้วหมดไป)',
+    totalUnits: 30,
+    availableUnits: 30,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230F766E" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>'
+  },
+  {
+    id: 'eq28',
+    name: 'A4 Paper (กระดาษ A4 ธรรมดา)',
+    category: 'Consumables',
+    description: 'กระดาษดับเบิ้ลเอกระดาษคุณภาพพรีเมียม 80 แกรม สำหรับพิมพ์ใบโปรแกรม (เบิกแล้วหมดไป)',
+    totalUnits: 100,
+    availableUnits: 100,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230F766E" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>'
+  },
+  {
+    id: 'eq29',
+    name: 'A4 Sticker Paper (กระดาษสติ๊กเกอร์ A4)',
+    category: 'Consumables',
+    description: 'สติ๊กเกอร์สีขาวพิมพ์และลอกติดกล่องเคสจัดลำดับผู้ป่วย (เบิกแล้วหมดไป)',
+    totalUnits: 50,
+    availableUnits: 50,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230F766E" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>'
+  },
+  {
+    id: 'eq30',
+    name: 'A4 Photo Paper (กระดาษ A4 Photo)',
+    category: 'Consumables',
+    description: 'กระดาษพิมพ์สีกึ่งมันสวยงามพรีเมียมสำหรับภาพวิชาการผู้ป่วย (เบิกแล้วหมดไป)',
+    totalUnits: 40,
+    availableUnits: 40,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230F766E" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>'
+  },
+  {
+    id: 'eq31',
+    name: 'AA Battery (ถ่าน AA)',
+    category: 'Consumables',
+    description: 'แบตเตอรี่อัลคาไลน์ไฟแรงสม่ำเสมอ สำหรับห้องสัมมนาใหญ่และไมโครโฟนลอย (เบิกแล้วหมดไป)',
+    totalUnits: 120,
+    availableUnits: 120,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230F766E" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>'
+  },
+  {
+    id: 'eq32',
+    name: 'AAA Battery (ถ่าน AAA)',
+    category: 'Consumables',
+    description: 'แบตเตอรี่ตรายาวสำหรับใส่รีโมตนำเสนอพอยเตอร์และสัมปทานอุปกรณ์โสตฯ (เบิกแล้วหมดไป)',
+    totalUnits: 120,
+    availableUnits: 120,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230F766E" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>'
+  },
+  {
+    id: 'eq33',
+    name: 'A4 Laminating Pouches (พลาสติกเคลือบแข็ง/สติ๊กเกอร์เคลือบ A4)',
+    category: 'Consumables',
+    description: 'พลาสติคใสเคลือบแข็งสลักเอกสารสตาฟป้องกันการหลุดกระดาษ (เบิกแล้วหมดไป)',
+    totalUnits: 200,
+    availableUnits: 200,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230F766E" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>'
+  },
+  {
+    id: 'eq34',
+    name: 'Staples (ไส้แม็ก)',
+    category: 'Consumables',
+    description: 'กล่องไส้สเตปเลอร์ ลวดเย็บกระดาษสำหรับอัดชุดกระดาษสัมมนาแพทย์ (เบิกแล้วหมดไป)',
+    totalUnits: 50,
+    availableUnits: 50,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230F766E" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>'
+  },
+  {
+    id: 'eq35',
+    name: 'Clear Sticker Film (สติ๊กเกอร์ใส)',
+    category: 'Consumables',
+    description: 'สติ๊กเกอร์ใสก้านกว้างใช้อัดเรียบผิวหน้าป้ายไวนิลสัมมนาการเรียนรู้ (เบิกแล้วหมดไป)',
+    totalUnits: 30,
+    availableUnits: 30,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230F766E" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>'
+  },
+  {
+    id: 'eq36',
+    name: 'Double-Sided Foam Tape (กระดาษกาวสองหน้าแบบหนา)',
+    category: 'Consumables',
+    description: 'กาวโฟมสองหน้าแกนหนายึดแผ่นป้ายหน้าวอร์ดมั่นคงปลอดภัย (เบิกแล้วหมดไป)',
+    totalUnits: 20,
+    availableUnits: 20,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230F766E" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>'
+  },
+  {
+    id: 'eq37',
+    name: 'Double-Sided Tissue Tape (กระดาษกาวสองหน้าแบบบาง)',
+    category: 'Consumables',
+    description: 'กระดาษเยื่อกาวบางติดสั่นแน่น เพื่อการประกอบใบชีทสัมปทานประดาษ (เบิกแล้วหมดไป)',
+    totalUnits: 25,
+    availableUnits: 25,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230F766E" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>'
+  },
+  {
+    id: 'eq38',
+    name: 'Clear Tape (เทปใส)',
+    category: 'Consumables',
+    description: 'ม้วนมอกกาวใสขนาดอรรถประโยชน์เพื่องานสาสน์ (เบิกแล้วหมดไป)',
+    totalUnits: 40,
+    availableUnits: 40,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230F766E" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>'
+  },
+  {
+    id: 'eq39',
+    name: 'A4 Opp Plastic Bag (ซองแก้ว A4)',
+    category: 'Consumables',
+    description: 'ซองซิลพลาสติกแก้วใสป้องกันคราบสกปรกและถนอมเกียรติบัตร (เบิกแล้วหมดไป)',
+    totalUnits: 300,
+    availableUnits: 300,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230F766E" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>'
+  },
+  {
+    id: 'eq40',
+    name: 'Others (อื่นๆ)',
+    category: 'Consumables',
+    description: 'พัสดุหรือวัสดุสิ้นเปลืองสำหรับงานโสตศึกษาเบ็ดเตล็ด (เบิกแล้วหมดไป)',
+    totalUnits: 100,
+    availableUnits: 100,
+    status: 'Ready',
+    image: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%230F766E" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>'
   }
 ];
 
@@ -154,8 +497,8 @@ const DEFAULT_RESERVATIONS: Reservation[] = [
     userName: 'นางสาวพิไลวรรณ พลอยดี',
     userDepartment: 'ฝ่ายกุมารเวชศาสตร์ (Pediatric)',
     items: [
-      { equipmentId: 'eq2', equipmentName: 'Medical Grand Round Projector (เครื่องฉายเลเซอร์โปรเจคเตอร์ 4K)', quantity: 1 },
-      { equipmentId: 'eq3', equipmentName: 'Wireless UHF Microphone & Audio Set (ชุดไมโครโฟนไร้สายระดับพรีเมียม)', quantity: 2 },
+      { equipmentId: 'eq1', equipmentName: 'Projector (เครื่องฉายโปรเจคเตอร์)', quantity: 1 },
+      { equipmentId: 'eq9', equipmentName: 'Wireless Microphone (ไมค์ลอย)', quantity: 2 },
     ],
     purpose: 'งานสัมมนาวิชาการเรื่องการดูแลทารกแรกเกิดภาวะวิกฤต (NICU Grand Rounds)',
     pickupTime: '2026-05-18T08:30',
@@ -167,14 +510,15 @@ const DEFAULT_RESERVATIONS: Reservation[] = [
     id: 'res-102',
     userId: 'u3',
     userName: 'นางสาวพิไลวรรณ พลอยดี',
-    userDepartment: 'ฝ่ายประสาทวิทยา (Neurology)',
+    userDepartment: 'ฝ่ายอายุรกรรม (Medicine)',
     items: [
-      { equipmentId: 'eq4', equipmentName: '3D Anatomy VR Simulator Headset (แว่นจำลองกายวิภาคศาสตร์ 3 มิติ)', quantity: 1 }
+      { equipmentId: 'eq27', equipmentName: 'Futureboard (ฟิวเจอร์บอร์ด)', quantity: 5 },
+      { equipmentId: 'eq28', equipmentName: 'A4 Paper (กระดาษ A4 ธรรมดา)', quantity: 20 }
     ],
-    purpose: 'ฝึกปฏิบัติจริงผ่าตัดส่องกล้องจำลองระบบประสาท (Neuro simulation workshop)',
+    purpose: 'แผนจัดอบรมผู้ช่วยวิจัยเวชศาสตร์และป้ายสัมมนา (เบิกวัสดุสิ้นเปลืองสำนักงาน)',
     pickupTime: '2026-05-19T09:00',
-    returnTime: '2026-05-19T13:00',
-    status: 'Handed Over',
+    returnTime: '',
+    status: 'Disbursed',
     createdAt: '2026-05-18T10:30:00Z',
   },
   {
@@ -183,8 +527,8 @@ const DEFAULT_RESERVATIONS: Reservation[] = [
     userName: 'นางสาวพิไลวรรณ พลอยดี',
     userDepartment: 'ฝ่ายศัลยกรรม (Surgery)',
     items: [
-      { equipmentId: 'eq1', equipmentName: 'Surgical Video Camera System (กล้องผ่าตัดเคลื่อนที่ความละเอียดสูง)', quantity: 1 },
-      { equipmentId: 'eq6', equipmentName: 'Smart Laser Presenter & Pointer (รีโมทพรีเซนต์ความถี่วิทยุไร้สาย)', quantity: 1 }
+      { equipmentId: 'eq1', equipmentName: 'Projector (เครื่องฉายโปรเจคเตอร์)', quantity: 1 },
+      { equipmentId: 'eq6', equipmentName: 'Power Strip (ปลั๊กไฟต่อพ่วง)', quantity: 1 }
     ],
     purpose: 'บันทึกการสอนหัตถการเย็บหลอดเลือดใหญ่ในห้องปฏิบัติการจำลองระดับสูง',
     pickupTime: '2026-05-20T13:00',
@@ -198,7 +542,7 @@ const DEFAULT_RESERVATIONS: Reservation[] = [
     userName: 'นางสาวพิไลวรรณ พลอยดี',
     userDepartment: 'ฝ่ายอายุรกรรม (Medicine)',
     items: [
-      { equipmentId: 'eq5', equipmentName: 'Telemedicine Dual-Screen Mobile Cart (รถเข็นตรวจผู้ป่วยทางไกลจอคู่)', quantity: 1 },
+      { equipmentId: 'eq3', equipmentName: 'PC All in One (คอมพิวเตอร์ตั้งโต๊ะ All in One)', quantity: 1 },
     ],
     purpose: 'สัมภาษณ์ประชุมปรึกษาทางไกลร่วมกับโรงพยาบาลเครือข่ายจังหวัดพังงา',
     pickupTime: '2026-05-21T09:00',
@@ -212,7 +556,7 @@ const DEFAULT_RESERVATIONS: Reservation[] = [
     userName: 'นางสาวพิไลวรรณ พลอยดี',
     userDepartment: 'ฝ่ายจิตเวชศาสตร์ (Psychology)',
     items: [
-      { equipmentId: 'eq3', equipmentName: 'Wireless UHF Microphone & Audio Set (ชุดไมโครโฟนไร้สายระดับพรีเมียม)', quantity: 1 },
+      { equipmentId: 'eq9', equipmentName: 'Wireless Microphone (ไมค์ลอย)', quantity: 1 },
     ],
     purpose: 'กิจกรรมจัดอบรมบุคลากรด้านจิตวิทยาบรรเทาความเหนื่อยล้าในการทำงาน (Burnout Relief)',
     pickupTime: '2026-05-15T09:00',
@@ -242,7 +586,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [equipmentList, setEquipmentList] = useState<Equipment[]>(() => {
     const saved = localStorage.getItem('av_equipment');
-    return saved ? JSON.parse(saved) : DEFAULT_EQUIPMENT;
+    const hasV3 = localStorage.getItem('av_inventory_v3');
+    if (saved && hasV3) {
+      return JSON.parse(saved);
+    }
+    localStorage.setItem('av_inventory_v3', 'true');
+    localStorage.setItem('av_equipment', JSON.stringify(DEFAULT_EQUIPMENT));
+    localStorage.setItem('av_reservations', JSON.stringify(DEFAULT_RESERVATIONS));
+    return DEFAULT_EQUIPMENT;
   });
 
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -252,7 +603,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [reservations, setReservations] = useState<Reservation[]>(() => {
     const saved = localStorage.getItem('av_reservations');
-    return saved ? JSON.parse(saved) : DEFAULT_RESERVATIONS;
+    const hasV3 = localStorage.getItem('av_inventory_v3');
+    if (saved && hasV3) {
+      return JSON.parse(saved);
+    }
+    return DEFAULT_RESERVATIONS;
   });
 
   const [staffDirectory, setStaffDirectory] = useState<StaffMember[]>(() => {
@@ -444,7 +799,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!currentUser) return { success: false, message: 'กรุณาเข้าสู่ระบบก่อนทำการยืม' };
     if (cart.length === 0) return { success: false, message: 'ไม่มีอุปกรณ์ในรายการยืม' };
     if (!purpose.trim()) return { success: false, message: 'กรุณาระบุวัตถุประสงค์การใช้งาน' };
-    if (!pickupTime || !returnTime) return { success: false, message: 'กรุณาระบุวันเวลาที่รับและส่งคืนอุปกรณ์' };
+
+    const itemsInCart = cart.map(cartItm => {
+      const eq = equipmentList.find(e => e.id === cartItm.equipmentId);
+      return eq;
+    });
+    const hasLoanable = itemsInCart.some(eq => eq && eq.category !== 'Consumables');
+
+    if (!pickupTime) return { success: false, message: 'กรุณาระบุวันเวลาที่เข้ารับพัสดุ' };
+    if (hasLoanable && !returnTime) return { success: false, message: 'กรุณาระบุวันเวลาที่ส่งคืนอุปกรณ์' };
 
     // Format items as ReservationItems structure
     const reservationItems = cart.map(cartItm => {
@@ -464,7 +827,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       items: reservationItems,
       purpose,
       pickupTime,
-      returnTime,
+      returnTime: hasLoanable ? returnTime : '',
       status: 'Pending',
       createdAt: new Date().toISOString()
     };
@@ -495,14 +858,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Handover / Return flows:
   // "When a reservation is "Approved" and subsequently marked as "Handed Over" by an Admin, the system must automatically
-  // deduct the exact item quantities from the equipment's availableUnits. When marked as "Returned", the inventory must be Wait!
+  // deduct the exact item quantities from the equipment's availableUnits. When marked as "Returned", the inventory must be
   // automatically added back to availableUnits without exceeding totalUnits."
   const handoverReservation = (id: string) => {
     const reservation = reservations.find(r => r.id === id);
     if (!reservation) return;
 
-    // Transition reservation state to Handed Over
-    setReservations(prev => prev.map(res => res.id === id ? { ...res, status: 'Handed Over' } : res));
+    // Check if the reservation consists ONLY of consumables
+    const isPurelyConsumable = reservation.items.every(itm => {
+      const eq = equipmentList.find(e => e.id === itm.equipmentId);
+      return eq && eq.category === 'Consumables';
+    });
+
+    const targetStatus: ReservationStatus = isPurelyConsumable ? 'Disbursed' : 'Handed Over';
+
+    // Transition reservation state
+    setReservations(prev => prev.map(res => res.id === id ? { ...res, status: targetStatus } : res));
 
     // Automatically deduct quantities from equipment availableUnits
     setEquipmentList(prev => prev.map(eq => {
@@ -525,10 +896,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Transition state
     setReservations(prev => prev.map(res => res.id === id ? { ...res, status: 'Returned' } : res));
 
-    // Automatically restore equipment availableUnits, bounded by totalUnits
+    // Automatically restore equipment availableUnits, bounded by totalUnits BUT skip consumables
     setEquipmentList(prev => prev.map(eq => {
       const itemToRestore = reservation.items.find(itm => itm.equipmentId === eq.id);
       if (itemToRestore) {
+        if (eq.category === 'Consumables') {
+          return eq; // Consumables are consumed, do not restore
+        }
         const updatedAvailableUnits = Math.min(eq.totalUnits, eq.availableUnits + itemToRestore.quantity);
         return {
           ...eq,

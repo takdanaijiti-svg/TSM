@@ -49,7 +49,7 @@ export const EquipmentPage: React.FC = () => {
 
   // Equipment Form fields state
   const [formName, setFormName] = useState('');
-  const [formCategory, setFormCategory] = useState('เครื่องฉายและจอภาพ');
+  const [formCategory, setFormCategory] = useState('Hardware');
   const [formDescription, setFormDescription] = useState('');
   const [formTotalUnits, setFormTotalUnits] = useState(1);
   const [formAvailableUnits, setFormAvailableUnits] = useState(1);
@@ -57,7 +57,7 @@ export const EquipmentPage: React.FC = () => {
   const [formImage, setFormImage] = useState('');
 
   // Categories list
-  const categories = ['All', 'เครื่องฉายและจอภาพ', 'ระบบเสียง', 'กล้องและบันทึกภาพ', 'ศูนย์ฝึกแพทย์จำลอง', 'อุปกรณ์เสริม'];
+  const categories = ['All', 'Hardware', 'Audio', 'Accessories', 'Cables', 'Office Supply', 'Consumables'];
 
   // Handle equipment modal submission
   const handleEquipmentSubmit = (e: React.FormEvent) => {
@@ -87,7 +87,7 @@ export const EquipmentPage: React.FC = () => {
   const resetEquipmentForm = () => {
     setEditingEquipment(null);
     setFormName('');
-    setFormCategory('เครื่องฉายและจอภาพ');
+    setFormCategory('Hardware');
     setFormDescription('');
     setFormTotalUnits(1);
     setFormAvailableUnits(1);
@@ -207,7 +207,13 @@ export const EquipmentPage: React.FC = () => {
                 }
               `}
             >
-              {cat === 'All' ? 'ทั้งหมด (All)' : cat}
+              {cat === 'All' && 'ทั้งหมด (All)'}
+              {cat === 'Hardware' && 'Hardware (เครื่องฉาย/คอม)'}
+              {cat === 'Audio' && 'Audio (ชุดวิทยุ/ไมค์)'}
+              {cat === 'Accessories' && 'Accessories (ปลั๊กพ่วง/รถเข็น)'}
+              {cat === 'Cables' && 'Cables (สายเชื่อมต่อ HDMI)'}
+              {cat === 'Office Supply' && 'Office Supply (เบิกสำนักงาน)'}
+              {cat === 'Consumables' && 'Consumables (วัสดุสิ้นเปลือง)'}
             </button>
           ))}
         </div>
@@ -439,11 +445,12 @@ export const EquipmentPage: React.FC = () => {
                     onChange={(e) => setFormCategory(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-950 text-white border border-slate-800 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   >
-                    <option value="เครื่องฉายและจอภาพ">เครื่องฉายและจอภาพ</option>
-                    <option value="ระบบเสียง">ระบบเสียง</option>
-                    <option value="กล้องและบันทึกภาพ">กล้องและบันทึกภาพ</option>
-                    <option value="ศูนย์ฝึกแพทย์จำลอง">ศูนย์ฝึกแพทย์จำลอง</option>
-                    <option value="อุปกรณ์เสริม">อุปกรณ์เสริม</option>
+                    <option value="Hardware">Hardware (เครื่องฉาย/คอมพิวเตอร์)</option>
+                    <option value="Audio">Audio (ชุดลำโพง/ไมค์)</option>
+                    <option value="Accessories">Accessories (ปลั๊กพ่วง/รถเข็น/ตัวแปลง)</option>
+                    <option value="Cables">Cables (สายสัญญาณ HDMI/AUX)</option>
+                    <option value="Office Supply">Office Supply (อุปกรณ์สำนักงาน)</option>
+                    <option value="Consumables">Consumables (วัสดุสิ้นเปลือง)</option>
                   </select>
                 </div>
 

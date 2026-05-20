@@ -121,7 +121,18 @@ export const SettingsPage: React.FC = () => {
               
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-950 p-4 rounded-xl border border-slate-850/60">
                 {/* Live Logo Render */}
-                <div className="w-16 h-16 rounded-xl bg-slate-900 border-2 border-emerald-500 flex items-center justify-center p-2.5 shrink-0 text-emerald-400" dangerouslySetInnerHTML={{ __html: logoUrl }} />
+                {logoUrl.trim().startsWith('<svg') || logoUrl.trim().startsWith('<?xml') || (logoUrl.includes('<svg') && !logoUrl.trim().startsWith('data:')) ? (
+                  <div className="w-16 h-16 rounded-xl bg-slate-900 border-2 border-emerald-500 flex items-center justify-center p-2.5 shrink-0 text-emerald-400" dangerouslySetInnerHTML={{ __html: logoUrl }} />
+                ) : (
+                  <div className="w-16 h-16 rounded-xl bg-slate-900 border-2 border-emerald-500 flex items-center justify-center p-1.5 shrink-0 overflow-hidden">
+                    <img
+                      src={logoUrl}
+                      alt="Hospital Logo"
+                      className="max-h-full max-w-full object-contain rounded-lg"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                )}
                 
                 <div className="space-y-2 flex-1 w-full">
                   <span className="text-[10px] text-slate-500 block">เลือกหน้าภาพสัญลักษณ์สถาบันแพทย์ หรือลากวางไฟล์ภาพด้านล่างเพื่อแปลงเป็น Base64 Data-URL ทันที:</span>

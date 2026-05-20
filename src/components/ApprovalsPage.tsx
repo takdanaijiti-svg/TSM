@@ -29,7 +29,7 @@ export const ApprovalsPage: React.FC = () => {
     currentUser
   } = useApp();
 
-  const [activeFilter, setActiveFilter] = useState<'All' | 'Pending' | 'Approved' | 'Handed Over' | 'Returned' | 'Rejected'>('All');
+  const [activeFilter, setActiveFilter] = useState<'All' | 'Pending' | 'Approved' | 'Handed Over' | 'Returned' | 'Rejected' | 'Disbursed'>('All');
   const [search, setSearch] = useState('');
   
   // Rejection Dialog State
@@ -116,6 +116,7 @@ export const ApprovalsPage: React.FC = () => {
             { id: 'Approved', label: '✅ อนุมัติแล้ว' },
             { id: 'Handed Over', label: '📦 ส่งมอบแล้ว' },
             { id: 'Returned', label: '🔄 ส่งคืนแล้ว' },
+            { id: 'Disbursed', label: '🧪 เบิกจ่ายแล้ว' },
             { id: 'Rejected', label: '❌ ปฏิเสธ' }
           ] as const).map((tab) => (
             <button
@@ -158,6 +159,7 @@ export const ApprovalsPage: React.FC = () => {
                     res.status === 'Approved' ? 'border-l-4 border-l-blue-500 border-slate-800' :
                     res.status === 'Handed Over' ? 'border-l-4 border-l-teal-500 border-slate-800' :
                     res.status === 'Returned' ? 'border-l-4 border-l-emerald-500 border-slate-800' :
+                    res.status === 'Disbursed' ? 'border-l-4 border-l-purple-500 border-slate-800' :
                     'border-l-4 border-l-rose-500 border-slate-800'
                   }
                 `}
@@ -179,13 +181,15 @@ export const ApprovalsPage: React.FC = () => {
                     res.status === 'Pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
                     res.status === 'Approved' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
                     res.status === 'Handed Over' ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' :
-                    res.status === 'Returned' ? 'bg-emerald-505/10 text-emerald-400 border-emerald-500/20' :
+                    res.status === 'Returned' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                    res.status === 'Disbursed' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
                     'bg-rose-500/10 text-rose-400 border-rose-500/20'
                   }`}>
                     {res.status === 'Pending' && '⏳ รอการพิจารณาตรวจสอบ'}
                     {res.status === 'Approved' && '✅ อนุมัติแล้ว - รอส่งสินค้า'}
                     {res.status === 'Handed Over' && '📦 จ่ายเครื่องออกไปแล้ว (บีบหักคลัง)'}
                     {res.status === 'Returned' && '🔄 ตรวจรับของคืนเรียบร้อย (เติมคลัง)'}
+                    {res.status === 'Disbursed' && '🧪 เบิกจ่ายพัสดุเรียบร้อย (วัสดุสิ้นเปลือง)'}
                     {res.status === 'Rejected' && '❌ ปฏิเสธไม่ออกสัมปทาน'}
                   </span>
                 </div>
@@ -217,7 +221,9 @@ export const ApprovalsPage: React.FC = () => {
                         </p>
                         <p className="flex justify-between border-t border-slate-900 pt-1 mt-1">
                           <span className="text-slate-400 text-[11px]">วันส่งคืน:</span>
-                          <span className="font-mono text-amber-500">{new Date(res.returnTime).toLocaleString('th-TH')}</span>
+                          <span className="font-mono text-amber-500">
+                            {res.returnTime ? new Date(res.returnTime).toLocaleString('th-TH') : 'ไม่ต้องส่งคืน (วัสดุสิ้นเปลือง)'}
+                          </span>
                         </p>
                       </div>
                     </div>
@@ -321,6 +327,13 @@ export const ApprovalsPage: React.FC = () => {
                       <div className="flex items-center gap-1 px-3 py-1 bg-emerald-950/20 text-emerald-400 border border-emerald-900 rounded-xl text-xs font-bold font-sans">
                         <CheckCircle2 size={14} />
                         <span>ปิดสัญญาเรียบร้อย</span>
+                      </div>
+                    )}
+
+                    {res.status === 'Disbursed' && (
+                      <div className="flex items-center gap-1 px-3 py-1 bg-purple-950/20 text-purple-400 border border-purple-900 rounded-xl text-xs font-bold font-sans">
+                        <CheckCircle2 size={14} />
+                        <span>เบิกจ่ายเสร็จสิ้น (สิ้นเปลือง)</span>
                       </div>
                     )}
                   </div>

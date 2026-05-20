@@ -59,7 +59,18 @@ export const LoginPage: React.FC = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="flex flex-col items-center">
           {/* Logo container dynamically loaded */}
-          <div className="w-20 h-20 rounded-2xl bg-slate-900 border-2 border-emerald-500 flex items-center justify-center p-3.5 shadow-emerald-500/10 shadow-lg text-emerald-400" dangerouslySetInnerHTML={{ __html: settings.logoUrl }} />
+          {settings.logoUrl.trim().startsWith('<svg') || settings.logoUrl.trim().startsWith('<?xml') || (settings.logoUrl.includes('<svg') && !settings.logoUrl.trim().startsWith('data:')) ? (
+            <div className="w-20 h-20 rounded-2xl bg-slate-900 border-2 border-emerald-500 flex items-center justify-center p-3.5 shadow-emerald-500/10 shadow-lg text-emerald-400" dangerouslySetInnerHTML={{ __html: settings.logoUrl }} />
+          ) : (
+            <div className="w-20 h-20 rounded-2xl bg-slate-900 border-2 border-emerald-500 flex items-center justify-center p-2 shadow-emerald-500/10 shadow-lg overflow-hidden shrink-0">
+              <img
+                src={settings.logoUrl}
+                alt="Hospital Logo"
+                className="max-h-full max-w-full object-contain rounded-xl"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+          )}
           <h2 className="mt-4 text-center text-3xl font-bold font-sans tracking-tight text-white">
             โสตทัศนศึกษา
           </h2>

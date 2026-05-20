@@ -52,7 +52,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
       {/* Mobile Header bar */}
       <header className="lg:hidden bg-slate-900 text-white p-4 h-16 flex items-center justify-between sticky top-0 z-30 shadow-md">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center p-1.5" dangerouslySetInnerHTML={{ __html: settings.logoUrl }} />
+          {settings.logoUrl.trim().startsWith('<svg') || settings.logoUrl.trim().startsWith('<?xml') || (settings.logoUrl.includes('<svg') && !settings.logoUrl.trim().startsWith('data:')) ? (
+            <div className="w-8 h-8 rounded bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center p-1.5 shrink-0" dangerouslySetInnerHTML={{ __html: settings.logoUrl }} />
+          ) : (
+            <div className="w-8 h-8 rounded bg-slate-850 border border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5">
+              <img
+                src={settings.logoUrl}
+                alt="Hospital Logo"
+                className="max-h-full max-w-full object-contain rounded"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+          )}
           <div>
             <h1 className="text-sm font-bold tracking-tight font-sans text-emerald-300">โสตทัศนศึกษา</h1>
             <p className="text-[10px] text-slate-300 truncate max-w-[180px]">{settings.hospitalName}</p>
@@ -76,7 +87,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
       `}>
         {/* Header/Branding */}
         <div className="p-5 border-b border-slate-800 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-lg bg-emerald-50 bg-opacity-10 p-2 flex items-center justify-center text-teal-400 shadow-inner" dangerouslySetInnerHTML={{ __html: settings.logoUrl }} />
+          {settings.logoUrl.trim().startsWith('<svg') || settings.logoUrl.trim().startsWith('<?xml') || (settings.logoUrl.includes('<svg') && !settings.logoUrl.trim().startsWith('data:')) ? (
+            <div className="w-11 h-11 rounded-lg bg-emerald-50 bg-opacity-10 p-2 flex items-center justify-center text-teal-400 shadow-inner shrink-0" dangerouslySetInnerHTML={{ __html: settings.logoUrl }} />
+          ) : (
+            <div className="w-11 h-11 rounded-lg bg-slate-900 border border-slate-800 p-1.5 overflow-hidden flex items-center justify-center shrink-0">
+              <img
+                src={settings.logoUrl}
+                alt="Hospital Logo"
+                className="max-h-full max-w-full object-contain rounded"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+          )}
           <div className="overflow-hidden">
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>

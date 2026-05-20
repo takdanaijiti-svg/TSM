@@ -39,11 +39,14 @@ export const MyRequestsPage: React.FC = () => {
 
   const userReservations = reservations.filter(res => res.userId === currentUser.id);
 
+  const cartEquipment = cart.map(cartItm => equipmentList.find(e => e.id === cartItm.equipmentId));
+  const hasLoanable = cartEquipment.some(eq => eq && eq.category !== 'Consumables');
+
   const handleCheckout = (e: React.FormEvent) => {
     e.preventDefault();
     setToast(null);
 
-    const result = createReservation(purpose, pickupTime, returnTime);
+    const result = createReservation(purpose, pickupTime, hasLoanable ? returnTime : '');
     if (result.success) {
       setToast({ type: 'success', message: result.message });
       setPurpose('');
@@ -185,9 +188,11 @@ export const MyRequestsPage: React.FC = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className={hasLoanable ? "grid grid-cols-1 sm:grid-cols-2 gap-4" : "grid grid-cols-1 gap-4"}>
                   <div>
-                    <label className="block text-slate-400 font-semibold mb-1.5">กำหนดการส่งมอบพัสดุ (วันรับของ)</label>
+                    <label className="block text-slate-400 font-semibold mb-1.5">
+                      {hasLoanable ? "กำหนดการส่งมอบพัสดุ (วันรับของ)" : "กำหนดการเบิกรับวัสดุ (วันรับพัสดุสิ้นเปลือง)"}
+                    </label>
                     <input
                       type="datetime-local"
                       required
@@ -197,16 +202,18 @@ export const MyRequestsPage: React.FC = () => {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-slate-400 font-semibold mb-1.5">กำหนดการส่งคืนพัสดุ (วันส่งของเข้าคลัง)</label>
-                    <input
-                      type="datetime-local"
-                      required
-                      value={returnTime}
-                      onChange={(e) => setReturnTime(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 text-white border border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
-                    />
-                  </div>
+                  {hasLoanable && (
+                    <div>
+                      <label className="block text-slate-400 font-semibold mb-1.5">กำหนดการส่งคืนพัสดุ (วันส่งของเข้าคลัง)</label>
+                      <input
+                        type="datetime-local"
+                        required
+                        value={returnTime}
+                        onChange={(e) => setReturnTime(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-950 text-white border border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-start gap-2 text-[10.5px] text-slate-500 bg-slate-950/40 p-2.5 rounded border border-slate-800">
@@ -218,7 +225,7 @@ export const MyRequestsPage: React.FC = () => {
                   type="submit"
                   className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 font-bold text-white shadow-lg shadow-teal-950/30 rounded-xl cursor-pointer transition uppercase text-xs flex items-center justify-center gap-1.5"
                 >
-                  ส่งประเมินสัญญายืม (Submit Loan Request)
+                  {hasLoanable ? "ส่งประเมินสัญญายืม (Submit Loan Request)" : "ส่งประเมินสัญญาสั่งเบิก (Submit Disburse Request)"}
                   <ArrowRight size={14} />
                 </button>
               </form>

@@ -25,7 +25,7 @@ export interface CartItem {
   quantity: number;
 }
 
-export type ReservationStatus = 'Pending' | 'Approved' | 'Rejected' | 'Handed Over' | 'Returned';
+export type ReservationStatus = 'Pending' | 'Approved' | 'Rejected' | 'Handed Over' | 'Returned' | 'Disbursed';
 
 export interface ReservationItem {
   equipmentId: string;
