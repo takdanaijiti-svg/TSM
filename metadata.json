@@ -1,0 +1,6 @@
+{
+  "name": "AV Loan System (โสตทัศนศึกษา)",
+  "description": "ระบบยืม-คืนอุปกรณ์โสตทัศนูปกรณ์สำหรับโรงพยาบาล (Hospital Audiovisual Loan System) with role-based access control, real-time inventory adjustments, interactive calendar tooltips, and repair workflow tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
