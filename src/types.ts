@@ -19,6 +19,7 @@ export interface Equipment {
   status: 'Ready' | 'Under Repair';
   image: string; // Base64 Data URL or nice visual placeholder SVG block
   repairNotes?: string;
+  unitsUnderRepair?: number;
 }
 
 export interface CartItem {
@@ -60,4 +61,17 @@ export interface StaffMember {
 export interface SystemSettings {
   hospitalName: string;
   logoUrl: string; // base64 logo or customizable image
+  maxLoanDays: number; // custom maximum borrowing duration limit
+  autoApproveConsumables: boolean; // toggle auto-approvals for office consumables
+}
+
+export interface ActivityLog {
+  id: string;
+  userName: string;
+  userEmail: string;
+  role: string;
+  action: string;
+  details: string;
+  timestamp: string;
+  type: 'info' | 'success' | 'warning' | 'error';
 }

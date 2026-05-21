@@ -1,30 +1,27 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { Logo } from './Logo';
 import {
   LayoutDashboard,
   Laptop,
   CheckSquare,
   Calendar,
-  BarChart3,
   Users2,
-  Settings,
   LogOut,
-  UserCheck,
   Menu,
   X,
-  PlusCircle,
   FileClock,
-  HeartPulse
+  HeartPulse,
+  Award,
+  Settings
 } from 'lucide-react';
-import { Role } from '../types';
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  onOpenRoleSwitcher: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpenRoleSwitcher }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
   const { currentUser, logout, settings, cart } = useApp();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -32,117 +29,98 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
 
   const role = currentUser.role;
 
-  // Navigation schema configured by role (RBAC)
+  // Official Navigation items (Settings has been removed as defaulted to Taksin Hospital)
   const navItems = [
-    { id: 'dashboard', label: 'แผงควบคุม (Dashboard)', icon: LayoutDashboard, roles: ['Admin', 'Manager', 'Staff'] },
+    { id: 'dashboard', label: 'แผงควบคุมหลัก (Dashboard)', icon: LayoutDashboard, roles: ['Admin', 'Manager', 'Staff'] },
     { id: 'equipment', label: 'คลังอุปกรณ์โสตฯ', icon: Laptop, roles: ['Admin', 'Manager', 'Staff'] },
     { id: 'my-requests', label: 'ตะกร้า & รายการยืมของฉัน', icon: FileClock, roles: ['Staff'], badge: cart.length > 0 ? cart.length : undefined },
     { id: 'approvals', label: 'อนุมัติการยืม-คืน', icon: CheckSquare, roles: ['Admin', 'Manager'] },
-    { id: 'calendar', label: 'ปฏิทินการจอง', icon: Calendar, roles: ['Admin', 'Manager', 'Staff'] },
-    { id: 'staff-directory', label: 'ทำเนียบบุคลากรโสตฯ', icon: Users2, roles: ['Admin', 'Manager', 'Staff'] },
-    { id: 'settings', label: 'ตั้งค่าระบบโรงพยาบาล', icon: Settings, roles: ['Admin'] },
+    { id: 'calendar', label: 'ปฏิทินเวลายืมอุปกรณ์', icon: Calendar, roles: ['Admin', 'Manager', 'Staff'] },
+    { id: 'staff-directory', label: 'ทำเนียบบุคลากรฝ่ายโสตฯ', icon: Users2, roles: ['Admin', 'Manager', 'Staff'] },
+    { id: 'settings', label: 'ตั้งค่าระบบ & ประวัติการทำงาน', icon: Settings, roles: ['Admin', 'Manager'] },
   ];
 
   const filteredNavItems = navItems.filter(item => item.roles.includes(role));
-
   const toggleSidebar = () => setIsOpen(!isOpen);
 
   return (
     <>
-      {/* Mobile Header bar */}
-      <header className="lg:hidden bg-slate-900 text-white p-4 h-16 flex items-center justify-between sticky top-0 z-30 shadow-md">
+      {/* Mobile Top Header */}
+      <header className="lg:hidden bg-[#005a3c] text-white p-4 h-16 flex items-center justify-between sticky top-0 z-30 shadow-md">
         <div className="flex items-center gap-2">
-          {settings.logoUrl.trim().startsWith('<svg') || settings.logoUrl.trim().startsWith('<?xml') || (settings.logoUrl.includes('<svg') && !settings.logoUrl.trim().startsWith('data:')) ? (
-            <div className="w-8 h-8 rounded bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center p-1.5 shrink-0" dangerouslySetInnerHTML={{ __html: settings.logoUrl }} />
-          ) : (
-            <div className="w-8 h-8 rounded bg-slate-850 border border-slate-700 overflow-hidden flex items-center justify-center shrink-0 p-0.5">
-              <img
-                src={settings.logoUrl}
-                alt="Hospital Logo"
-                className="max-h-full max-w-full object-contain rounded"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-          )}
+          <Logo 
+            logoUrl={settings.logoUrl}
+            className="w-10 h-10 rounded-full bg-white p-1 shrink-0 shadow"
+            classNameImg="max-h-full max-w-full rounded-full object-contain"
+          />
           <div>
-            <h1 className="text-sm font-bold tracking-tight font-sans text-emerald-300">โสตทัศนศึกษา</h1>
-            <p className="text-[10px] text-slate-300 truncate max-w-[180px]">{settings.hospitalName}</p>
+            <h1 className="text-xs font-black tracking-tight text-emerald-200">งานโสตทัศนศึกษา</h1>
+            <p className="text-[10px] text-white font-medium truncate max-w-[180px]">{settings.hospitalName}</p>
           </div>
         </div>
-        <button id="toggle-sidebar" onClick={toggleSidebar} className="text-slate-300 hover:text-white p-1" aria-label="Toggle Navigation">
+        <button 
+          id="toggle-sidebar" 
+          onClick={toggleSidebar} 
+          className="text-white hover:text-emerald-200 p-1 cursor-pointer focus:outline-none" 
+          aria-label="Toggle Navigation"
+        >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </header>
 
-      {/* Backdrop for mobile */}
+      {/* Backdrop for mobile overlays */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 lg:hidden z-20 transition-opacity" onClick={toggleSidebar} />
+        <div className="fixed inset-0 bg-black/60 lg:hidden z-20 transition-opacity" onClick={toggleSidebar} />
       )}
 
-      {/* Sidebar Navigation */}
+      {/* Primary Sidebar Container */}
       <aside className={`
-        fixed lg:sticky top-0 left-0 h-[calc(100vh-4rem)] lg:h-screen w-72 bg-gradient-to-b from-slate-900 to-slate-950 text-slate-100 flex flex-col z-20 transition-transform duration-300 transform shadow-xl
+        fixed lg:sticky top-0 left-0 h-[calc(100vh-4rem)] lg:h-screen w-72 bg-gradient-to-b from-[#004730] to-[#002f1f] text-white flex flex-col z-20 transition-transform duration-300 transform shadow-2xl
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0
       `}>
-        {/* Header/Branding */}
-        <div className="p-5 border-b border-slate-800 flex items-center gap-3">
-          {settings.logoUrl.trim().startsWith('<svg') || settings.logoUrl.trim().startsWith('<?xml') || (settings.logoUrl.includes('<svg') && !settings.logoUrl.trim().startsWith('data:')) ? (
-            <div className="w-11 h-11 rounded-lg bg-emerald-50 bg-opacity-10 p-2 flex items-center justify-center text-teal-400 shadow-inner shrink-0" dangerouslySetInnerHTML={{ __html: settings.logoUrl }} />
-          ) : (
-            <div className="w-11 h-11 rounded-lg bg-slate-900 border border-slate-800 p-1.5 overflow-hidden flex items-center justify-center shrink-0">
-              <img
-                src={settings.logoUrl}
-                alt="Hospital Logo"
-                className="max-h-full max-w-full object-contain rounded"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-          )}
+        {/* Hospital Branding Header */}
+        <div className="p-5 border-b border-[#035237]/60 flex items-center gap-3 bg-[#003c27]">
+          <Logo 
+            logoUrl={settings.logoUrl}
+            className="w-12 h-12 rounded-full bg-white p-1.5 shrink-0 shadow-lg"
+            classNameImg="max-h-full max-w-full rounded-full object-contain"
+          />
           <div className="overflow-hidden">
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <h1 className="text-lg font-bold font-sans tracking-tight text-white">โสตทัศนศึกษา</h1>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <h1 className="text-sm font-black tracking-wider text-white">งานโสตทัศนศึกษา</h1>
             </div>
-            <p className="text-xs text-slate-400 truncate mt-0.5" title={settings.hospitalName}>
+            <p className="text-[10.5px] text-emerald-100 font-bold truncate mt-0.5" title={settings.hospitalName}>
               {settings.hospitalName}
             </p>
           </div>
         </div>
 
-        {/* User Info & Fast Role Switcher */}
-        <div className="p-4 mx-3 my-4 rounded-xl bg-slate-800/60 border border-slate-700/50">
+        {/* Selected User Profiles Card */}
+        <div className="p-4 mx-4 my-5 rounded-2xl bg-white/10 border border-white/15 shadow-inner">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-teal-800 flex items-center justify-center font-bold text-teal-200 text-sm border-2 border-emerald-500 shadow-md">
-              {currentUser.role[0]}
+            <div className="w-11 h-11 rounded-full bg-emerald-700 hover:bg-emerald-600 border-2 border-emerald-400 text-white flex items-center justify-center font-black text-sm shadow-md shrink-0 select-none">
+              {currentUser.name[0]}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold truncate text-white">{currentUser.name}</p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full ${
-                  currentUser.role === 'Admin' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
-                  currentUser.role === 'Manager' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' :
-                  'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+              <p className="text-xs font-extrabold truncate text-white" title={currentUser.name}>{currentUser.name}</p>
+              <div className="flex flex-col gap-1 mt-1">
+                <span className={`inline-flex px-1.5 py-0.5 text-[9px] font-black rounded-md w-fit ${
+                  currentUser.role === 'Admin' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
+                  currentUser.role === 'Manager' ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' :
+                  'bg-emerald-400/20 text-emerald-300 border border-emerald-400/30'
                 }`}>
                   {currentUser.role}
                 </span>
-                <span className="text-[10px] text-slate-400 truncate">{currentUser.department.split(' ')[0]}</span>
+                <span className="text-[10px] text-emerald-200 truncate font-semibold">{currentUser.department}</span>
               </div>
             </div>
           </div>
-          
-          <button 
-            id="role-switch"
-            onClick={onOpenRoleSwitcher} 
-            className="w-full mt-3 px-3 py-1.5 bg-slate-700/50 hover:bg-slate-700 text-[11px] font-medium rounded-lg text-slate-200 border border-slate-600 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-          >
-            <UserCheck size={12} className="text-emerald-400" />
-            สลับระดับสิทธิ์ตรวจงาน (Switch Role)
-          </button>
         </div>
 
-        {/* Navigation Items */}
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+        {/* Interactive Navigation links */}
+        <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
           {filteredNavItems.map((item) => {
             const IconComponent = item.icon;
             const isSelected = activeTab === item.id;
@@ -155,17 +133,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
                   setIsOpen(false);
                 }}
                 className={`
-                  w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-150 cursor-pointer group
+                  w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs tracking-wide transition-all cursor-pointer group
                   ${isSelected
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-900/20 border-l-4 border-emerald-300'
-                    : 'text-slate-300 hover:bg-slate-800/40 hover:text-white'
+                    ? 'bg-emerald-600/90 text-white shadow-md border-l-4 border-emerald-300'
+                    : 'text-emerald-100 hover:bg-white/10 hover:text-white'
                   }
                 `}
               >
-                <IconComponent size={18} className={`transition-transform group-hover:scale-105 ${isSelected ? 'text-white' : 'text-slate-400 group-hover:text-emerald-400'}`} />
+                <IconComponent 
+                  size={16} 
+                  className={`transition-all ${isSelected ? 'text-white scale-110' : 'text-emerald-300 group-hover:text-amber-300'}`} 
+                />
                 <span className="text-left flex-1">{item.label}</span>
-                {item.badge && (
-                  <span className="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ring-2 ring-slate-900 animate-pulse">
+                {item.badge !== undefined && (
+                  <span className="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md animate-pulse">
                     {item.badge}
                   </span>
                 )}
@@ -174,22 +155,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
           })}
         </nav>
 
-        {/* Footer info & Logout */}
-        <div className="p-4 border-t border-slate-800 space-y-2 bg-slate-950/40">
-          <div className="flex items-center justify-between text-[11px] text-slate-500 px-2">
-            <span>ระบบยืมอุปกรณ์ v1.0.0</span>
-            <span className="flex items-center gap-1 text-emerald-500">
-              <HeartPulse size={10} className="animate-pulse" />
-              โหมดเสถียร
+        {/* Fixed footer & Action items */}
+        <div className="p-4 border-t border-[#035237]/60 space-y-2 bg-[#002f1f]/80">
+          <div className="flex items-center justify-between text-[10px] text-emerald-300/60 px-1 font-mono">
+            <span>OFFICIAL AUDIOVISUAL</span>
+            <span className="flex items-center gap-0.5 text-emerald-400 font-bold">
+              <Award size={10} className="animate-spin" />
+              <span>SECURED</span>
             </span>
           </div>
           <button
             id="nav-logout"
             onClick={logout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-rose-400 hover:bg-rose-500/10 rounded-xl text-xs font-semibold border border-rose-500/20 transition-all cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-rose-300 hover:bg-rose-500/10 rounded-xl text-xs font-bold border border-rose-400/20 transition-all cursor-pointer hover:border-rose-400/40"
           >
             <LogOut size={14} />
-            ออกจากระบบ (Sign Out)
+            ออกจากระบบงานสิทธิ์ตรวจ
           </button>
         </div>
       </aside>

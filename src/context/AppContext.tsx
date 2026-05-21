@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Equipment, CartItem, Reservation, StaffMember, SystemSettings, Role, ReservationStatus } from '../types';
+import { User, Equipment, CartItem, Reservation, StaffMember, SystemSettings, Role, ReservationStatus, ActivityLog } from '../types';
 
 interface AppContextType {
   currentUser: User | null;
@@ -9,6 +9,7 @@ interface AppContextType {
   reservations: Reservation[];
   staffDirectory: StaffMember[];
   settings: SystemSettings;
+  activityLogs: ActivityLog[];
   login: (email: string, password?: string) => boolean;
   register: (name: string, email: string, password: string, role: Role, department: string) => boolean;
   logout: () => void;
@@ -17,8 +18,8 @@ interface AppContextType {
   updateEquipment: (id: string, updated: Partial<Equipment>) => void;
   deleteEquipment: (id: string) => void;
   // Repair Workflow
-  sendToRepair: (id: string, notes: string) => void;
-  returnFromRepair: (id: string) => void;
+  sendToRepair: (id: string, notes: string, quantity: number) => void;
+  returnFromRepair: (id: string, quantity: number) => void;
   // Cart Actions
   addToCart: (equipmentId: string, qty?: number) => void;
   removeFromCart: (equipmentId: string) => void;
@@ -35,7 +36,10 @@ interface AppContextType {
   updateStaff: (id: string, updated: Partial<StaffMember>) => void;
   deleteStaff: (id: string) => void;
   // Settings Management
-  updateSettings: (hospitalName: string, logoUrl: string) => void;
+  updateSettings: (hospitalName: string, logoUrl: string, maxLoanDays: number, autoApproveConsumables: boolean) => void;
+  // Logs Action
+  addActivityLog: (action: string, details: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
+  clearLogs: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -52,9 +56,9 @@ const MOCK_IMAGES = {
 };
 
 const DEFAULT_USERS: User[] = [
-  { id: 'u1', name: 'ผศ.นพ.นัฐวุฒิ รักเรียน (ศัลยศาสตร์)', email: 'admin@hospital.com', role: 'Admin', department: 'ฝ่ายศัลยกรรม (Surgery)', password: 'admin123' },
-  { id: 'u2', name: 'ดร.อรอนงค์ เลิศภักดิ์ (อายุรกรรม)', email: 'manager@hospital.com', role: 'Manager', department: 'ฝ่ายอายุรกรรม (Medicine)', password: 'manager123' },
-  { id: 'u3', name: 'นางสาวพิไลวรรณ พลอยดี (โสตทัศนศึกษา)', email: 'staff@hospital.com', role: 'Staff', department: 'ฝ่ายกุมารเวชศาสตร์ (Pediatric)', password: 'staff123' },
+  { id: 'u1', name: 'ผศ.นพ.นัฐวุฒิ รักเรียน (ผู้ดูแลระบบโสตฯ)', email: 'admin@taksin.hospital', role: 'Admin', department: 'ฝ่ายบริการการแพทย์และโสตทัศนูปกรณ์', password: 'TaksinAdmin2026' },
+  { id: 'u2', name: 'ดร.อรอนงค์ เลิศภักดิ์ (หัวหน้าฝ่ายบริหารการรักษา)', email: 'manager@taksin.hospital', role: 'Manager', department: 'กลุ่มงานเทคโนโลยีสารสนเทศเพื่อสุขภาพ', password: 'TaksinManager3000' },
+  { id: 'u3', name: 'นางสาวพิไลวรรณ พลอยดี (พยาบาลวิชาชีพชำนาญการ)', email: 'staff@taksin.hospital', role: 'Staff', department: 'หอผู้ป่วยวิกฤตศัลยกรรม (Surgical ICU)', password: 'TaksinStaff111' },
 ];
 
 const DEFAULT_EQUIPMENT: Equipment[] = [
@@ -569,7 +573,9 @@ const DEFAULT_RESERVATIONS: Reservation[] = [
 
 const DEFAULT_SETTINGS: SystemSettings = {
   hospitalName: 'โรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช',
-  logoUrl: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><circle cx="50" cy="50" r="47" fill="#005a3c" stroke="#ffffff" stroke-width="1" /><circle cx="50" cy="50" r="45" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.5" /><circle cx="50" cy="50" r="33.5" fill="none" stroke="#ffffff" stroke-width="1.2" /><path id="topTextPath" d="M 9.5 50 A 40.5 40.5 0 0 1 90.5 50" fill="none" /><path id="bottomTextPath" d="M 90.5 50 A 40.5 40.5 0 0 1 9.5 50" fill="none" /><text font-family="'Sarabun', 'Inter', sans-serif" font-size="4.2" font-weight="950" fill="#ffffff" letter-spacing="0.08"><textPath href="#topTextPath" startOffset="50%" text-anchor="middle">โรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช</textPath></text><text font-family="'Sarabun', 'Inter', sans-serif" font-size="5" font-weight="950" fill="#ffffff" letter-spacing="0.1"><textPath href="#bottomTextPath" startOffset="50%" text-anchor="middle">กระทรวงสาธารณสุข</textPath></text><g transform="translate(50, 50) scale(0.55)"><line x1="0" y1="-28" x2="0" y2="24" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" /><circle cx="0" cy="-28" r="3" fill="#ffffff" /><path d="M -5 -33 C -7 -38 0 -45 0 -45 C 0 -45 7 -38 5 -33 C 8 -30 3 -26 0 -26 C -3 -26 -8 -30 -5 -33 Z" fill="#ffffff" /><path d="M -2 -31 C -4 -34 0 -38 0 -38 C 0 -38 4 -34 2 -31 C 3 -29 1 -27 0 -27 C -1 -27 -3 -29 -2 -31 Z" fill="#e6f4ea" opacity="0.9" /><path d="M 0 -13 C 8 -23 25 -18 25 -9 C 25 -2 15 -4 10 -2 C 6 0 2 3 0 5" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" /><path d="M 0 -13 C -8 -23 -25 -18 -25 -9 C -25 -2 -15 -4 -10 -2 C -6 0 -2 3 0 5" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" /><path d="M 0 -7 C 5 -15 20 -11 20 -4 C 20 2 12 0 7 2" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" /><path d="M 0 -7 C -5 -15 -20 -11 -20 -4 C -20 2 -12 0 -7 2" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" /><path d="M 0 10 C 13 8 13 -6 0 -8 C -13 -6 -13 8 0 10" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" /><path d="M 0 22 C 10 20 10 12 0 10 C -10 12 -10 20 0 22" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" /><path d="M -1 -7 C -5 -9 -8 -9 -11 -8 C -10 -7 -8 -5 -5 -6 Z" fill="#ffffff" /><path d="M 1 -7 C 5 -9 8 -9 11 -8 C 10 -7 8 -5 5 -6 Z" fill="#ffffff" /></g></svg>`
+  logoUrl: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><circle cx="50" cy="50" r="47" fill="#005a3c" stroke="#ffffff" stroke-width="1" /><circle cx="50" cy="50" r="45" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.5" /><circle cx="50" cy="50" r="33.5" fill="none" stroke="#ffffff" stroke-width="1.2" /><path id="topTextPath" d="M 9.5 50 A 40.5 40.5 0 0 1 90.5 50" fill="none" /><path id="bottomTextPath" d="M 90.5 50 A 40.5 40.5 0 0 1 9.5 50" fill="none" /><text font-family="'Sarabun', 'Inter', sans-serif" font-size="4.2" font-weight="950" fill="#ffffff" letter-spacing="0.08"><textPath href="#topTextPath" startOffset="50%" text-anchor="middle">โรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช</textPath></text><text font-family="'Sarabun', 'Inter', sans-serif" font-size="5" font-weight="950" fill="#ffffff" letter-spacing="0.1"><textPath href="#bottomTextPath" startOffset="50%" text-anchor="middle">กระทรวงสาธารณสุข</textPath></text><g transform="translate(50, 50) scale(0.55)"><line x1="0" y1="-28" x2="0" y2="24" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" /><circle cx="0" cy="-28" r="3" fill="#ffffff" /><path d="M -5 -33 C -7 -38 0 -45 0 -45 C 0 -45 7 -38 5 -33 C 8 -30 3 -26 0 -26 C -3 -26 -8 -30 -5 -33 Z" fill="#ffffff" /><path d="M -2 -31 C -4 -34 0 -38 0 -38 C 0 -38 4 -34 2 -31 C 3 -29 1 -27 0 -27 C -1 -27 -3 -29 -2 -31 Z" fill="#e6f4ea" opacity="0.9" /><path d="M 0 -13 C 8 -23 25 -18 25 -9 C 25 -2 15 -4 10 -2 C 6 0 2 3 0 5" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" /><path d="M 0 -13 C -8 -23 -25 -18 -25 -9 C -25 -2 -15 -4 -10 -2 C -6 0 -2 3 0 5" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" /><path d="M 0 -7 C 5 -15 20 -11 20 -4 C 20 2 12 0 7 2" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" /><path d="M 0 -7 C -5 -15 -20 -11 -20 -4 C -20 2 -12 0 -7 2" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" /><path d="M 0 10 C 13 8 13 -6 0 -8 C -13 -6 -13 8 0 10" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" /><path d="M 0 22 C 10 20 10 12 0 10 C -10 12 -10 20 0 22" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" /><path d="M -1 -7 C -5 -9 -8 -9 -11 -8 C -10 -7 -8 -5 -5 -6 Z" fill="#ffffff" /><path d="M 1 -7 C 5 -9 8 -9 11 -8 C 10 -7 8 -5 5 -6 Z" fill="#ffffff" /></g></svg>`,
+  maxLoanDays: 7,
+  autoApproveConsumables: true
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -577,13 +583,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [users, setUsers] = useState<User[]>(() => {
     const saved = localStorage.getItem('av_users');
     const loaded: User[] = saved ? JSON.parse(saved) : DEFAULT_USERS;
+    
+    // Safety migrations: If there are old demo accounts with old passwords, map them to current ones
     return loaded.map(u => {
-      if (!u.password) {
-        let password = 'password123';
-        if (u.email.toLowerCase().includes('admin')) password = 'admin123';
-        else if (u.email.toLowerCase().includes('manager')) password = 'manager123';
-        else if (u.email.toLowerCase().includes('staff')) password = 'staff123';
-        return { ...u, password };
+      const cleanEmail = u.email.toLowerCase();
+      if (cleanEmail === 'admin@hospital.com' || cleanEmail === 'admin@taksin.hospital') {
+        return { ...u, email: 'admin@taksin.hospital', password: 'TaksinAdmin2026', name: 'ผศ.นพ.นัฐวุฒิ รักเรียน (ผู้ดูแลระบบโสตฯ)', department: 'ฝ่ายบริการการแพทย์และโสตทัศนูปกรณ์' };
+      }
+      if (cleanEmail === 'manager@hospital.com' || cleanEmail === 'manager@taksin.hospital') {
+        return { ...u, email: 'manager@taksin.hospital', password: 'TaksinManager3000', name: 'ดร.อรอนงค์ เลิศภักดิ์ (หัวหน้าฝ่ายบริหารการรักษา)', department: 'กลุ่มงานเทคโนโลยีสารสนเทศเพื่อสุขภาพ' };
+      }
+      if (cleanEmail === 'staff@hospital.com' || cleanEmail === 'staff@taksin.hospital') {
+        return { ...u, email: 'staff@taksin.hospital', password: 'TaksinStaff111', name: 'นางสาวพิไลวรรณ พลอยดี (พยาบาลวิชาชีพชำนาญการ)', department: 'หอผู้ป่วยวิกฤตศัลยกรรม (Surgical ICU)' };
       }
       return u;
     });
@@ -594,15 +605,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (saved) {
       try {
         const u = JSON.parse(saved);
-        if (u && !u.password) {
-          u.password = u.email.toLowerCase().includes('admin') ? 'admin123' : u.email.toLowerCase().includes('manager') ? 'manager123' : 'staff123';
+        if (u) {
+          const cleanEmail = u.email.toLowerCase();
+          if (cleanEmail.includes('admin')) {
+            return { ...u, email: 'admin@taksin.hospital', password: 'TaksinAdmin2026', role: 'Admin' as Role };
+          } else if (cleanEmail.includes('manager')) {
+            return { ...u, email: 'manager@taksin.hospital', password: 'TaksinManager3000', role: 'Manager' as Role };
+          } else if (cleanEmail.includes('staff')) {
+            return { ...u, email: 'staff@taksin.hospital', password: 'TaksinStaff111', role: 'Staff' as Role };
+          }
+          return u;
         }
-        return u;
       } catch (e) {
-        return { ...DEFAULT_USERS[0], password: 'admin123' };
+        return null;
       }
     }
-    return { ...DEFAULT_USERS[0], password: 'admin123' }; // Default to first user (Admin) to facilitate instant inspection
+    return null; // Require login under strict mode
   });
 
   const [equipmentList, setEquipmentList] = useState<Equipment[]>(() => {
@@ -644,13 +662,85 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (parsed && parsed.hospitalName === 'โรงพยาบาลมหาวิทยาลัยแพทยศาสตร์โสตทัศน์') {
           return DEFAULT_SETTINGS;
         }
-        return parsed;
+        return {
+          ...DEFAULT_SETTINGS,
+          ...parsed
+        };
       } catch (e) {
         return DEFAULT_SETTINGS;
       }
     }
     return DEFAULT_SETTINGS;
   });
+
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(() => {
+    const saved = localStorage.getItem('av_activity_logs');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return [];
+      }
+    }
+    return [
+      {
+        id: 'log-1',
+        userName: 'ผศ.นพ.นัฐวุฒิ รักเรียน (ผู้ดูแลระบบโสตฯ)',
+        userEmail: 'admin@taksin.hospital',
+        role: 'Admin',
+        action: 'ติดตั้งระบบและนำเข้าข้อมูลตั้งต้น',
+        details: 'นำเข้าข้อมูลครุภัณฑ์โสตทัศนูปกรณ์จำนวน 26 รายการ และวัสดุสิ้นเปลือง 14 รายการ เรียบร้อยแล้ว',
+        timestamp: new Date(Date.now() - 3600000 * 24 * 3).toISOString(),
+        type: 'success'
+      },
+      {
+        id: 'log-2',
+        userName: 'นางสาวพิไลวรรณ พลอยดี',
+        userEmail: 'staff@taksin.hospital',
+        role: 'Staff',
+        action: 'ยื่นคำร้องขอยืมอุปกรณ์',
+        details: 'ยื่นคำร้องขอยืม Projector (เครื่องฉายโปรเจคเตอร์) 1 เครื่อง และ Wireless Microphone (ไมค์ลอย) 2 ชิ้น สำหรับงาน NICU Grand Rounds (ส่งคืนสำเร็จแล้ว)',
+        timestamp: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
+        type: 'info'
+      },
+      {
+        id: 'log-3',
+        userName: 'ดร.อรอนงค์ เลิศภักดิ์',
+        userEmail: 'manager@taksin.hospital',
+        role: 'Manager',
+        action: 'อนุมัติคำร้องขอขอยืมอุปกรณ์',
+        details: 'การจองรหัส res-101 ได้รับการอนุมัติและประทับสิทธิ์ตามระเบียบโรงพยาบาลสมเด็จพระเจ้าตากสินมหาราช',
+        timestamp: new Date(Date.now() - 3600000 * 24 * 1.9).toISOString(),
+        type: 'success'
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('av_activity_logs', JSON.stringify(activityLogs));
+  }, [activityLogs]);
+
+  const addActivityLog = (
+    action: string, 
+    details: string, 
+    type: 'info' | 'success' | 'warning' | 'error' = 'info'
+  ) => {
+    const newLog: ActivityLog = {
+      id: 'log-' + Math.random().toString(36).substr(2, 9),
+      userName: currentUser ? currentUser.name : 'System (ระบบอัตโนมัติ)',
+      userEmail: currentUser ? currentUser.email : 'system@taksin.hospital',
+      role: currentUser ? currentUser.role : 'System',
+      action,
+      details,
+      timestamp: new Date().toISOString(),
+      type
+    };
+    setActivityLogs(prev => [newLog, ...prev].slice(0, 500));
+  };
+
+  const clearLogs = () => {
+    setActivityLogs([]);
+  };
 
   // Persists states in LocalStorage upon change
   useEffect(() => {
@@ -690,56 +780,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentUser(foundUser);
         return true;
       }
-      // Allow internal quick switcher to change roles without password re-entry
-      if (password === undefined && currentUser !== null) {
-        setCurrentUser(foundUser);
-        return true;
-      }
       return false;
-    }
-    // Attempt automatic fallback mock provision for testing
-    let assumedRole: Role | null = null;
-    let fallbackPassword = 'password123';
-    if (cleanEmail.includes('admin')) {
-      assumedRole = 'Admin';
-      fallbackPassword = 'admin123';
-    } else if (cleanEmail.includes('manager')) {
-      assumedRole = 'Manager';
-      fallbackPassword = 'manager123';
-    } else if (cleanEmail.includes('staff')) {
-      assumedRole = 'Staff';
-      fallbackPassword = 'staff123';
-    }
-
-    if (assumedRole) {
-      if (password && password !== fallbackPassword) {
-        return false;
-      }
-      // Allow rapid internal quick switcher
-      if (password === undefined && currentUser !== null) {
-        const u: User = { 
-          id: 'u' + Date.now(), 
-          name: `${assumedRole} User`, 
-          email: email, 
-          role: assumedRole, 
-          department: assumedRole === 'Admin' ? 'ฝ่ายผู้อำนวยการโสตศึกษา' : assumedRole === 'Manager' ? 'ฝ่ายเทคโนโลยีพยาบาล' : 'ฝ่ายวิจัยและกุมารเวช',
-          password: fallbackPassword
-        };
-        setUsers(prev => [...prev, u]);
-        setCurrentUser(u);
-        return true;
-      }
-      const u: User = { 
-        id: 'u' + Date.now(), 
-        name: `${assumedRole} User`, 
-        email: email, 
-        role: assumedRole, 
-        department: assumedRole === 'Admin' ? 'ฝ่ายผู้อำนวยการโสตศึกษา' : assumedRole === 'Manager' ? 'ฝ่ายเทคโนโลยีพยาบาล' : 'ฝ่ายวิจัยและกุมารเวช',
-        password: fallbackPassword
-      };
-      setUsers(prev => [...prev, u]);
-      setCurrentUser(u);
-      return true;
     }
     return false;
   };
@@ -774,6 +815,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: 'eq-' + Math.random().toString(36).substr(2, 9)
     };
     setEquipmentList(prev => [...prev, newItem]);
+    addActivityLog(
+      'เพิ่มครุภัณฑ์ใหม่',
+      `นำเข้า "${newItem.name}" เข้าสู่สารบบคลังรวม จำนวนปริมาณตั้งต้น ${newItem.totalUnits} ชิ้น`,
+      'success'
+    );
   };
 
   const updateEquipment = (id: string, updated: Partial<Equipment>) => {
@@ -785,6 +831,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           result.availableUnits = result.totalUnits;
         }
         if (result.availableUnits < 0) result.availableUnits = 0;
+        
+        addActivityLog(
+          'แก้ไขข้อมูลพัสดุ',
+          `อัปเดตสเปกครุภัณฑ์ "${eq.name}" ในระบบเรียบร้อยแล้ว`,
+          'info'
+        );
         return result;
       }
       return eq;
@@ -792,39 +844,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteEquipment = (id: string) => {
+    const found = equipmentList.find(e => e.id === id);
     setEquipmentList(prev => prev.filter(eq => eq.id !== id));
     setCart(prev => prev.filter(itm => itm.equipmentId !== id));
+    if (found) {
+      addActivityLog(
+        'ลบครุภัณฑ์พัสดุ',
+        `จำหน่ายครุภัณฑ์ "${found.name}" ออกจากสารบัญระบบการจอง`,
+        'error'
+      );
+    }
   };
 
   // Repair Workflow:
   // "When an Admin sends an item to repair via a Modal specifying repair notes, the item's state changes to 'Under Repair'
-  // and its available units decrease by 1. When marked fixed, it returns to 'Ready' and restores 1 unit to available units."
-  const sendToRepair = (id: string, notes: string) => {
+  // and its available units decrease by the specified quantity. When marked fixed, it restores the returned quantity to available units."
+  const sendToRepair = (id: string, notes: string, quantity: number) => {
     setEquipmentList(prev => prev.map(eq => {
       if (eq.id === id) {
-        // Decrease availableUnits by 1 if above 0
-        const updatedAvailableUnits = Math.max(0, eq.availableUnits - 1);
+        const qtyToSend = Math.max(1, Math.min(eq.availableUnits, quantity));
+        const updatedAvailableUnits = Math.max(0, eq.availableUnits - qtyToSend);
+        const currentUnderRepair = eq.unitsUnderRepair || 0;
+        const updatedUnderRepair = currentUnderRepair + qtyToSend;
+        addActivityLog(
+          'ส่งซ่อมส่งเคลมบำรุง',
+          `ส่งจำหน่ายซ่อมบำรุงพัสดุ "${eq.name}" จำนวน ${qtyToSend} ชิ้น อาการ: ${notes || 'ไม่ระบุ'} (ตัดลดยอดคงเหลือ ${qtyToSend} ชิ้นชั่วคราว)`,
+          'warning'
+        );
         return {
           ...eq,
           status: 'Under Repair',
           repairNotes: notes,
-          availableUnits: updatedAvailableUnits
+          availableUnits: updatedAvailableUnits,
+          unitsUnderRepair: updatedUnderRepair
         };
       }
       return eq;
     }));
   };
 
-  const returnFromRepair = (id: string) => {
+  const returnFromRepair = (id: string, quantity: number) => {
     setEquipmentList(prev => prev.map(eq => {
       if (eq.id === id) {
-        // Increase availableUnits by 1 without exceeding totalUnits
-        const updatedAvailableUnits = Math.min(eq.totalUnits, eq.availableUnits + 1);
+        const currentUnderRepair = eq.unitsUnderRepair || 0;
+        // Make sure returning quantity doesn't exceed unitsUnderRepair
+        const qtyToReturn = Math.max(1, Math.min(currentUnderRepair, quantity));
+        const updatedUnderRepair = Math.max(0, currentUnderRepair - qtyToReturn);
+        const updatedAvailableUnits = Math.min(eq.totalUnits, eq.availableUnits + qtyToReturn);
+        
+        addActivityLog(
+          'รับคืนจากการส่งซ่อม',
+          `รับมอบคืนพัสดุเสร็จสิ้นจากการซ่อมบำรุง "${eq.name}" จำนวน ${qtyToReturn} ชิ้น ส่งคืนเข้าคลังพร้อมจำหน่ายให้บริการ`,
+          'success'
+        );
         return {
           ...eq,
-          status: 'Ready',
-          repairNotes: undefined,
-          availableUnits: updatedAvailableUnits
+          status: updatedUnderRepair > 0 ? 'Under Repair' : 'Ready',
+          repairNotes: updatedUnderRepair > 0 ? eq.repairNotes : undefined,
+          availableUnits: updatedAvailableUnits,
+          unitsUnderRepair: updatedUnderRepair
         };
       }
       return eq;
@@ -887,6 +965,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     });
 
+    const isPurelyConsumable = reservationItems.every(itm => {
+      const eq = equipmentList.find(e => e.id === itm.equipmentId);
+      return eq && eq.category === 'Consumables';
+    });
+
+    const isAutoApproved = isPurelyConsumable && settings.autoApproveConsumables;
+
     const newReservation: Reservation = {
       id: 'res-' + Math.random().toString(36).substr(2, 9),
       userId: currentUser.id,
@@ -896,19 +981,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       purpose,
       pickupTime,
       returnTime: hasLoanable ? returnTime : '',
-      status: 'Pending',
+      status: isAutoApproved ? 'Approved' : 'Pending',
       createdAt: new Date().toISOString()
     };
 
     setReservations(prev => [newReservation, ...prev]);
     setCart([]);
-    return { success: true, message: 'ทำการจองอุปกรณ์สำเร็จเรียบร้อยแล้ว กำลังรอผู้ดูแลตรวจสอบการอนุมัติ' };
+
+    addActivityLog(
+      'ทำรายการจองอุปกรณ์',
+      `ส่งคำขอร้องยืมรหัส ${newReservation.id} สำหรับงาน "${purpose}" จำนวน ${reservationItems.length} ไอเท็ม ${isAutoApproved ? '(อนุมัติอัตโนมัตินโยบายวัสดุสิ้นเปลือง)' : '(รอตรวจอนุมัติ)'}`,
+      isAutoApproved ? 'success' : 'info'
+    );
+
+    return { 
+      success: true, 
+      message: isAutoApproved 
+        ? 'ทำการจองสำเร็จและอนุมัติอัตโนมัติแล้ว! พัสดุพร้อมรับจ่ายที่พิกัดคลังทันที'
+        : 'ทำการจองอุปกรณ์สำเร็จเรียบร้อยแล้ว กำลังรอผู้ดูแลตรวจสอบการอนุมัติ' 
+    };
   };
 
   // Reservation Approval workflows:
   const approveReservation = (id: string) => {
     setReservations(prev => prev.map(res => {
       if (res.id === id) {
+        addActivityLog(
+          'อนุมัติรายการยืมพัสดุ',
+          `รายการจอง ${res.id} ของคุณ "${res.userName}" ได้รับการพิจารณาเลือกอนุมัติผ่านระบบ`,
+          'success'
+        );
         return { ...res, status: 'Approved' };
       }
       return res;
@@ -918,6 +1020,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const rejectReservation = (id: string, reason: string) => {
     setReservations(prev => prev.map(res => {
       if (res.id === id) {
+        addActivityLog(
+          'ปฏิเสธการมอบยืมพัสดุ',
+          `ปฏิเสธคำขอจอง ${res.id} ของคุณ "${res.userName}" เนื่องจาก: ${reason}`,
+          'error'
+        );
         return { ...res, status: 'Rejected', rejectionReason: reason };
       }
       return res;
@@ -955,6 +1062,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return eq;
     }));
+
+    addActivityLog(
+      targetStatus === 'Disbursed' ? 'จ่ายพัสดุเบิกสิ้นเปลือง' : 'ส่งมอบพัสดุนอกคลัง',
+      `เบิกจ่าย/ส่งมอบไอเท็มรหัสคำขอ ${id} ให้กับคุณ "${reservation.userName}" เรียบร้อยแล้ว (ตัดตัดลดยอดคงเหลือในคลัง)`,
+      'success'
+    );
   };
 
   const returnReservation = (id: string) => {
@@ -979,6 +1092,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return eq;
     }));
+
+    addActivityLog(
+      'รับตรวจคืนพัสดุสู่คลัง',
+      `รับคืนพัสดุครบตามจำนวนตามใบจอง ${id} ของคุณ "${reservation.userName}" กลับสู่คลังหลักเพื่อพร้อมบริการต่อ`,
+      'success'
+    );
   };
 
   // Staff CRUD
@@ -999,11 +1118,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Settings Management
-  const updateSettings = (hospitalName: string, logoUrl: string) => {
+  const updateSettings = (hospitalName: string, logoUrl: string, maxLoanDays: number, autoApproveConsumables: boolean) => {
     setSettings({
       hospitalName,
-      logoUrl: logoUrl || DEFAULT_SETTINGS.logoUrl
+      logoUrl: logoUrl || DEFAULT_SETTINGS.logoUrl,
+      maxLoanDays: maxLoanDays || 7,
+      autoApproveConsumables: autoApproveConsumables !== undefined ? autoApproveConsumables : true
     });
+    addActivityLog(
+      'เปลี่ยนการตั้งค่าระบบ',
+      `ปรับปรุงชื่อโรงพยาบาลเป็น "${hospitalName}" และตั้งค่านโยบายยืมสูงสุด ${maxLoanDays} วัน (อนุมัติวัสดุสิ้นเปลืองอัตโนมัติ: ${autoApproveConsumables ? "เปิด" : "ปิด"})`,
+      'warning'
+    );
   };
 
   return (
@@ -1015,6 +1141,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       reservations,
       staffDirectory,
       settings,
+      activityLogs,
       login,
       register,
       logout,
@@ -1035,7 +1162,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addStaff,
       updateStaff,
       deleteStaff,
-      updateSettings
+      updateSettings,
+      addActivityLog,
+      clearLogs
     }}>
       {children}
     </AppContext.Provider>
